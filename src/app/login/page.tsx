@@ -31,7 +31,7 @@ export default function LoginPage() {
     const checkUsername = formData.username.replace(/\s+/g, "").toLowerCase();
 
     try {
-      // Check directly in Firestore
+      // Cek langsung di Firestore
       const userRef = doc(db, "users", checkUsername);
       const userSnap = await getDoc(userRef);
 
@@ -41,13 +41,13 @@ export default function LoginPage() {
 
       const userData = userSnap.data();
 
-      // Simple password check (Insecure for production, but per request)
+      // Cek password sederhana
       if (userData.password !== formData.password) {
         throw new Error("Password salah.");
       }
 
-      // Success - Save simplistic session to localStorage
-      // Success - Save simplistic session via Context
+      // Berhasil - Simpan sesi sederhana ke localStorage
+      // Berhasil - Simpan sesi sederhana via Context
       login({
         username: checkUsername,
         name: userData.name,
@@ -70,7 +70,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 py-12">
+    <div className="min-h-[calc(100svh-65px)] bg-background flex items-center justify-center p-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <Card className="border-zinc-800 bg-zinc-900/50 shadow-2xl">
           <CardHeader className="space-y-1">

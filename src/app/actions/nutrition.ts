@@ -4,13 +4,13 @@ import { GoogleGenAI } from "@google/genai";
 
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-export async function getNutritionData(query: string) {
+export async function getDataNutrisi(pencarian: string) {
   if (!process.env.GEMINI_API_KEY) {
-    return { error: "API Key not configured" };
+    return { error: "API Key tidak dikonfigurasi" };
   }
 
   try {
-    const input = query;
+    const input = pencarian;
 
     const prompt = `
 Setiap kali saya memasukkan daftar makanan dan jumlahnya dalam satu kalimat, kamu harus:
@@ -24,41 +24,41 @@ Setiap kali saya memasukkan daftar makanan dan jumlahnya dalam satu kalimat, kam
 
 3. Menghitung total nilai gizi untuk seluruh makanan yang diinput (bukan per item, tetapi total gabungan) berdasarkan taksiran data nutrisi yang wajar.
 
-4. Hanya menjawab dalam format JSON dengan satu objek seperti di bawah ini, tanpa teks tambahan apa pun, tanpa penjelasan, tanpa catatan:
+4. Hanya menjawab dalam format JSON dengan satu objek menggunakan KUNCI BAHASA INDONESIA seperti di bawah ini, tanpa teks tambahan apa pun, tanpa penjelasan, tanpa catatan:
 
 {
-  "items": [
+  "item": [
     {
-      "name": "telur",
-      "quantity": 1,
-      "quantity_unit": "butir"
+      "nama": "telur",
+      "jumlah": 1,
+      "satuan": "butir"
     },
     {
-      "name": "dada ayam",
-      "quantity": 2,
-      "quantity_unit": "potong"
+      "nama": "dada ayam",
+      "jumlah": 2,
+      "satuan": "potong"
     }
   ],
-  "calories": 1312.3,
-  "serving_size_g": 453.592,
-  "fat_total_g": 82.9,
-  "fat_saturated_g": 33.2,
+  "kalori": 1312.3,
+  "berat_sajian_g": 453.592,
+  "lemak_total_g": 82.9,
+  "lemak_jenuh_g": 33.2,
   "protein_g": 132,
   "sodium_mg": 217,
-  "potassium_mg": 781,
-  "cholesterol_mg": 487,
-  "carbohydrates_total_g": 0,
-  "fiber_g": 0,
-  "sugar_g": 0
+  "kalium_mg": 781,
+  "kolesterol_mg": 487,
+  "karbohidrat_total_g": 0,
+  "serat_g": 0,
+  "gula_g": 0
 }
 
 Keterangan format:
-- "items" adalah array berisi objek untuk setiap jenis makanan.
-- "name" adalah nama makanan yang sudah diperbaiki dan distandarkan.
-- "quantity" adalah jumlah item sesuai input.
-- "quantity_unit" adalah satuan praktis yang sesuai (misalnya "butir", "potong", "gram", "ml"; jika tidak jelas dari konteks, gunakan satuan yang paling umum untuk makanan tersebut).
-- Semua nilai numerik di luar "items" (calories, protein, dan seterusnya) adalah total untuk seluruh input.
-- "serving_size_g" adalah estimasi total berat dalam gram dari semua makanan yang diinput.
+- "item" adalah array berisi objek untuk setiap jenis makanan.
+- "nama" adalah nama makanan yang sudah diperbaiki dan distandarkan.
+- "jumlah" adalah jumlah item sesuai input.
+- "satuan" adalah satuan praktis yang sesuai (misalnya "butir", "potong", "gram", "ml"; jika tidak jelas dari konteks, gunakan satuan yang paling umum untuk makanan tersebut).
+- Semua nilai numerik di luar "item" (kalori, protein_g, dan seterusnya) adalah total untuk seluruh input.
+- "berat_sajian_g" adalah estimasi total berat dalam gram dari semua makanan yang diinput.
 - Jangan menambahkan field lain selain yang tercantum di atas.
 - Jangan menambahkan teks apa pun di luar objek JSON tersebut.
 
@@ -73,10 +73,10 @@ Input: "${input}"
     const text = response.text;
 
     if (!text) {
-      throw new Error("Gagal untuk Fetching Data!");
+      throw new Error("Gagal mengambil data via Gemini!");
     }
 
-    // Clean markdown
+    // Bersihkan markdown
     const cleanText = text
       .replace(/```json/g, "")
       .replace(/```/g, "")
@@ -87,6 +87,6 @@ Input: "${input}"
     return { data };
   } catch (err) {
     console.error("Server Action Error:", err);
-    return { error: "An unexpected error occurred." };
+    return { error: "Terjadi kesalahan yang tidak terduga." };
   }
 }

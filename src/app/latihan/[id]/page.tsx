@@ -1,46 +1,47 @@
 "use client";
 
 import * as React from "react";
-import { getExerciseDetail, ExerciseDetail } from "../../actions/exercise";
-import { Loader2, ArrowLeft, PlayCircle } from "lucide-react";
+import { getDetailLatihan, DetailLatihan } from "../../actions/exercise";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-export default function ExerciseDetailPage() {
+// Komponen utama halaman detail latihan
+export default function HalamanDetailLatihan() {
   const params = useParams();
   const id = params?.id as string;
 
-  const [exercise, setExercise] = React.useState<ExerciseDetail | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [latihan, setLatihan] = React.useState<DetailLatihan | null>(null);
+  const [memuat, setMemuat] = React.useState(true);
+  const [kesalahan, setKesalahan] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!id) return;
 
-    const fetchData = async () => {
+    // Fungsi async untuk mengambil data detail latihan berdasarkan ID
+    const ambilData = async () => {
       try {
-        setLoading(true);
-        const resp = await getExerciseDetail(id);
-        console.log("API Response (Detail):", resp);
+        setMemuat(true);
+        const respon = await getDetailLatihan(id);
 
-        if (resp.error) {
-          setError(resp.error);
-        } else if (resp.data) {
-          setExercise(resp.data);
+        if (respon.error) {
+          setKesalahan(respon.error);
+        } else if (respon.data) {
+          setLatihan(respon.data);
         }
       } catch (err) {
-        setError("Gagal mengambil detail latihan.");
+        setKesalahan("Gagal mengambil detail latihan.");
       } finally {
-        setLoading(false);
+        setMemuat(false);
       }
     };
 
-    fetchData();
+    ambilData();
   }, [id]);
 
-  if (loading) {
+  if (memuat) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-24">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -48,11 +49,11 @@ export default function ExerciseDetailPage() {
     );
   }
 
-  if (error || !exercise) {
+  if (kesalahan || !latihan) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center pt-24 gap-4 px-4 text-center">
         <h1 className="text-2xl font-bold text-destructive">Oops!</h1>
-        <p className="text-muted-foreground">{error || "Latihan tidak ditemukan."}</p>
+        <p className="text-muted-foreground">{kesalahan || "Latihan tidak ditemukan."}</p>
         <Button asChild variant="outline">
           <Link href="/list-latihan">Kembali ke List Latihan</Link>
         </Button>
@@ -73,12 +74,12 @@ export default function ExerciseDetailPage() {
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-        {/* Media & Quick Stats */}
+        {/* Media & Statistik Cepat */}
         <div className="space-y-6">
-          <div className="relative w-full rounded-2xl overflow-hidden bg-linear-to-br from-white/5 to-white/10 border border-white/10 shadow-2xl group">
-            {exercise.videoUrl ? (
+          <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-br from-white/5 to-white/10 border border-white/10 shadow-2xl group">
+            {latihan.urlVideo ? (
               <video
-                src={exercise.videoUrl}
+                src={latihan.urlVideo}
                 autoPlay
                 loop
                 muted
@@ -88,9 +89,10 @@ export default function ExerciseDetailPage() {
               />
             ) : (
               <div className="relative w-full h-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={exercise.imageUrl}
-                  alt={exercise.name}
+                  src={latihan.urlGambar}
+                  alt={latihan.nama}
                   className="w-full h-full object-contain p-8 group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
@@ -100,19 +102,19 @@ export default function ExerciseDetailPage() {
           <div className="grid grid-cols-2 gap-4">
             <Card className="bg-zinc-900 border-white/10">
               <CardContent className="p-4 text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Type</p>
-                <p className="font-bold text-lg capitalize text-primary">{exercise.exerciseType}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Tipe</p>
+                <p className="font-bold text-lg capitalize text-primary">{latihan.tipeLatihan}</p>
               </CardContent>
             </Card>
             <Card className="bg-zinc-900 border-white/10">
               <CardContent className="p-4 text-center">
                 <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">
-                  Body Part
+                  Bagian Tubuh
                 </p>
                 <div className="flex flex-wrap justify-center gap-1 mt-1">
-                  {exercise.bodyParts.map((bp) => (
-                    <span key={bp} className="text-sm font-semibold capitalize">
-                      {bp}
+                  {latihan.bagianTubuh.map((bt) => (
+                    <span key={bt} className="text-sm font-semibold capitalize">
+                      {bt}
                     </span>
                   ))}
                 </div>
@@ -121,22 +123,22 @@ export default function ExerciseDetailPage() {
           </div>
         </div>
 
-        {/* Detail */}
+        {/* Detail Latihan */}
         <div className="space-y-8">
           <div>
             <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-2 text-primary">
-              {exercise.name}
+              {latihan.nama}
             </h1>
             <div className="flex flex-wrap gap-2 text-sm text-muted-foreground capitalize">
               <span>
-                Target: <span className="text-foreground">{exercise.targetMuscles.join(", ")}</span>
+                Target: <span className="text-foreground">{latihan.ototTarget.join(", ")}</span>
               </span>
-              {exercise.secondaryMuscles.length > 0 && (
+              {latihan.ototSekunder.length > 0 && (
                 <>
                   <span>•</span>
                   <span>
-                    Secondary:{" "}
-                    <span className="text-foreground">{exercise.secondaryMuscles.join(", ")}</span>
+                    Sekunder:{" "}
+                    <span className="text-foreground">{latihan.ototSekunder.join(", ")}</span>
                   </span>
                 </>
               )}
@@ -144,27 +146,27 @@ export default function ExerciseDetailPage() {
           </div>
 
           <div className="prose prose-invert max-w-none text-muted-foreground leading-relaxed">
-            <p>{exercise.overview}</p>
+            <p>{latihan.ringkasan}</p>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold border-b border-white/10 pb-2">Instructions</h3>
+            <h3 className="text-xl font-semibold border-b border-white/10 pb-2">Instruksi</h3>
             <ol className="list-decimal list-outside pl-5 space-y-3 marker:text-primary/50">
-              {exercise.instructions.map((step, idx) => (
+              {latihan.instruksi.map((langkah, idx) => (
                 <li key={idx} className="pl-2">
-                  {step}
+                  {langkah}
                 </li>
               ))}
             </ol>
           </div>
 
-          {exercise.exerciseTips.length > 0 && (
+          {latihan.tipsLatihan && latihan.tipsLatihan.length > 0 && (
             <div className="space-y-4 bg-amber-500/5 p-6 rounded-2xl border border-amber-500/10">
               <h3 className="text-xl font-semibold text-amber-500 flex items-center gap-2">
-                Tips & Cautions
+                Tips & Peringatan
               </h3>
               <ul className="space-y-2">
-                {exercise.exerciseTips.map((tip, idx) => (
+                {latihan.tipsLatihan.map((tip, idx) => (
                   <li key={idx} className="flex gap-3 text-sm text-amber-200/80">
                     <span className="block w-1.5 h-1.5 mt-1.5 rounded-full bg-amber-500 shrink-0" />
                     {tip}
@@ -174,11 +176,11 @@ export default function ExerciseDetailPage() {
             </div>
           )}
 
-          {exercise.variations.length > 0 && (
+          {latihan.variasi && latihan.variasi.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-muted-foreground">Variations</h3>
+              <h3 className="text-lg font-semibold text-muted-foreground">Variasi</h3>
               <div className="flex flex-wrap gap-2">
-                {exercise.variations.map((v, idx) => (
+                {latihan.variasi.map((v, idx) => (
                   <div
                     key={idx}
                     className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-sm hover:bg-white/10 transition-colors cursor-default"

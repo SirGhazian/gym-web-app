@@ -21,7 +21,7 @@ import io, { Socket } from "socket.io-client";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
-// Define Socket URL (Use environment variable in production)
+// Definisikan URL Socket
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
 
 interface Message {
@@ -51,9 +51,9 @@ export default function RoomChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Redirect if not logged in
+  // Alihkan jika belum login
   useEffect(() => {
-    // Wait a bit to ensure auth state is loaded (optional, handled in AuthContext mostly)
+    // Tunggu sebentar untuk memastikan status auth dimuat
     const timer = setTimeout(() => {
       if (!user && !localStorage.getItem("gym_user")) {
         router.push("/login");
@@ -70,7 +70,7 @@ export default function RoomChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  // Initialize Socket connection
+  // Inisialisasi koneksi Socket
   useEffect(() => {
     if (!user) return;
 
@@ -78,7 +78,7 @@ export default function RoomChatPage() {
 
     socket.on("connect", () => {
       console.log("Connected to socket server");
-      // Request active rooms upon connection
+      // Minta room aktif saat terkoneksi
       socket.emit("get_active_rooms");
     });
 
@@ -106,13 +106,13 @@ export default function RoomChatPage() {
     if (!finalRoomNumber.trim()) return;
     if (!user) return;
 
-    // Update state if coming from click
+    // Update state jika berasal dari klik
     if (roomNum) setRoomNumber(roomNum);
 
-    // Join Room
+    // Gabung Room
     socket.emit("join_room", { room: finalRoomNumber, username: user.username });
 
-    // Clear previous messages until history is received
+    // Hapus pesan sebelumnya sampai history diterima
     setMessages([]);
     setStep("chat");
   };
@@ -124,13 +124,13 @@ export default function RoomChatPage() {
     const now = new Date();
     const timeString = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-    // Send Message
+    // Kirim Pesan
     socket.emit("send_message", {
       room: roomNumber,
       username: user.username,
       author: user.name,
       message: inputText,
-      time: now.toISOString(), // Send ISO string for consistency
+      time: now.toISOString(),
     });
 
     setInputText("");
@@ -140,14 +140,10 @@ export default function RoomChatPage() {
     setStep("input");
     setMessages([]);
     setRoomNumber("");
-    // Note: In a real app we might want to emit a 'leave_room' event,
-    // but simply switching view and joining a new room later works for basic use cases
-    // or relying on 'disconnect' if they leave the page.
-    // For cleaner logic, let's just reset UI state.
   };
 
   if (!user) {
-    return null; // Or loading spinner
+    return null;
   }
 
   if (step === "input") {
@@ -333,11 +329,11 @@ export default function RoomChatPage() {
         {/* Pesan */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {messages.map((msg, index) => {
-            // Adding index as fallback key if id is not unique temporarily
+            // Menambahkan index sebagai fallback key jika id tidak unik sementara
             const isMe = msg.userId === user.username;
             const date = new Date(msg.createdAt);
             const timeDisplay = isNaN(date.getTime())
-              ? msg.createdAt // Fallback if string is formatted
+              ? msg.createdAt // Fallback jika string sudah diformat
               : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
             return (

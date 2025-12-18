@@ -30,7 +30,7 @@ function RegisterContent() {
     const checkUsername = formData.username.replace(/\s+/g, "").toLowerCase();
 
     try {
-      // 1. Check if username already exists
+      // Cek apakah username sudah ada
       const userRef = doc(db, "users", checkUsername);
       const userSnap = await getDoc(userRef);
 
@@ -38,21 +38,21 @@ function RegisterContent() {
         throw new Error("Username sudah digunakan. Silakan pilih username lain.");
       }
 
-      // 2. Save User Data to Firestore (using username as ID)
+      // Simpan Data Pengguna ke Firestore (gunakan username sebagai ID)
       await setDoc(userRef, {
         username: checkUsername,
         name: formData.name,
-        password: formData.password, // Storing plain text as requested context suggests simple DB storage
+        password: formData.password, // Menyimpan teks biasa sesuai permintaan konteks penyimpanan DB sederhana
         createdAt: serverTimestamp(),
       });
 
-      // Redirect to Login
+      // Arahkan ke Login
       router.push("/login");
     } catch (error: any) {
       console.error("Registration Error:", error);
       let errorMessage = error.message || "Terjadi kesalahan saat mendaftar.";
 
-      // Handle permission error specifically
+      // Tangani kesalahan izin secara spesifik
       if (
         error.code === "permission-denied" ||
         (error.message && error.message.includes("permission-denied"))
@@ -68,7 +68,7 @@ function RegisterContent() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 py-12">
+    <div className="min-h-[calc(100svh-65px)] bg-background flex items-center justify-center p-4 py-12">
       <div className="w-full max-w-lg space-y-6">
         <Card className="border-zinc-800 bg-zinc-900/50 shadow-2xl">
           <CardHeader className="space-y-1">
