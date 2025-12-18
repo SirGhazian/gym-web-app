@@ -8,12 +8,12 @@ const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
 const port = process.env.PORT || 3000;
 
-// Initialize Next.js
+// Inisialisasi Next.js
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
-// In-memory storage for rooms and messages
-// Structure: { [roomId]: { messages: [], users: [] } }
+// Penyimpanan memori untuk room dan pesan
+// Struktur: { [roomId]: { messages: [], users: [] } }
 const rooms = {};
 
 app.prepare().then(() => {
@@ -24,29 +24,29 @@ app.prepare().then(() => {
   io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
 
-    // Join Room
+    // Gabung Room
     socket.on("join_room", (roomId) => {
       socket.join(roomId);
       console.log(`User ${socket.id} joined room ${roomId}`);
 
-      // Initialize room if not exists
+      // Inisialisasi room jika belum ada
       if (!rooms[roomId]) {
         rooms[roomId] = { messages: [], created_at: new Date() };
       }
 
-      // Send chat history to user
+      // Kirim riwayat chat ke user
       socket.emit("receive_history", rooms[roomId].messages);
-      
-      // Broadcast active room list to everyone (so other users see the new room)
+
+      // Broadcast daftar room aktif ke semua (agar user lain melihat room baru)
       io.emit("active_rooms", getActiveRooms());
     });
 
-    // Send Message
+    // Kirim Pesan
     socket.on("send_message", (data) => {
       const { roomId, text, userId } = data;
-      
+
       if (!rooms[roomId]) {
-         rooms[roomId] = { messages: [], created_at: new Date() };
+        rooms[roomId] = { messages: [], created_at: new Date() };
       }
 
       const message = {
@@ -58,30 +58,32 @@ app.prepare().then(() => {
 
       rooms[roomId].messages.push(message);
 
-      // Broadcast to room
+      // Broadcast ke room
       io.to(roomId).emit("receive_message", message);
     });
 
-    // Request active rooms
+    // Permintaan room aktif
     socket.on("get_active_rooms", () => {
-       socket.emit("active_rooms", getActiveRooms());
+      socket.emit("active_rooms", getActiveRooms());
     });
-    
+
     socket.on("disconnect", () => {
       console.log("Client disconnected:", socket.id);
     });
   });
 
-  // Helper to get active rooms list
+  // Helper untuk mendapatkan daftar room aktif
   function getActiveRooms() {
-    return Object.keys(rooms).map(id => ({
-      id,
-      roomNumber: id.replace("room-", ""), // Client expects roomNumber
-      createdAt: rooms[id].created_at
-    })).sort((a, b) => b.createdAt - a.createdAt);
+    return Object.keys(rooms)
+      .map((id) => ({
+        id,
+        roomNumber: id.replace("room-", ""), // Client expects roomNumber
+        createdAt: rooms[id].created_at,
+      }))
+      .sort((a, b) => b.createdAt - a.createdAt);
   }
 
-  // Handle all other requests with Next.js
+  // Tangani semua request lain dengan Next.js
   server.all("*", (req, res) => {
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
