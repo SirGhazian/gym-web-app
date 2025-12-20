@@ -18,11 +18,12 @@ function RegisterContent() {
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     username: "",
     password: "",
   });
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const daftar = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -42,8 +43,10 @@ function RegisterContent() {
       await setDoc(userRef, {
         username: checkUsername,
         name: formData.name,
+        email: formData.email,
         password: formData.password, // Menyimpan teks biasa sesuai permintaan konteks penyimpanan DB sederhana
         createdAt: serverTimestamp(),
+        activePlan: null, // Inisialisasi paket kosong
       });
 
       // Arahkan ke Login
@@ -78,7 +81,7 @@ function RegisterContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleRegister} className="space-y-4">
+            <form onSubmit={daftar} className="space-y-4">
               {error && (
                 <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md border border-destructive/20">
                   {error}
@@ -93,6 +96,18 @@ function RegisterContent() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="ucok@contoh.com"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
 

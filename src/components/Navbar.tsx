@@ -12,7 +12,7 @@ export function Navbar() {
   const { user, logout } = useAuth();
 
   const links = [
-    { href: "/", label: "Home", icon: Home },
+    { href: "/", label: "Beranda", icon: Home },
     { href: "/list-latihan", label: "List Latihan", icon: Dumbbell },
     { href: "/cek-nutrisi", label: "Cek Nutrisi", icon: Utensils },
     { href: "/room-chat", label: "Room Chat", icon: MessageCircle },

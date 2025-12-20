@@ -1,7 +1,50 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* Print Styles */
+@media print {
+  @page {
+    size: A4; /* Force A4 if possible */
+    margin: 0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important; /* Hide scrollbars/extra pages from main content */
+  }
+
+  /* Hide everything using visibility to keep structure but hide pixels */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Make the printable area and ALL its children visible */
+  .printable-area,
+  .printable-area * {
+    visibility: visible !important;
+  }
+
+  .printable-area {
+    position: fixed; /* Fixed removes it from flow and puts it relative to window/page */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100vh; /* Use viewport height for print page */
+    margin: 0;
+    padding: 20px;
+    background: white !important;
+    z-index: 9999;
+    
+    /* Layout for the receipt */
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+}
 
 @theme inline {
   --color-background: var(--background);

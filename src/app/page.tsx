@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,20 +20,50 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  const aksiHero = () => {
+    if (loading) return;
+    if (user) {
+      router.push("/profil");
+    } else {
+      // Scroll ke bagian membership
+      const membershipSection = document.getElementById("membership");
+      if (membershipSection) {
+        membershipSection.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
+
+  const pilihPaket = (planId: string) => {
+    if (loading) return;
+    if (user) {
+      // Jika sudah login, pergi ke profil untuk mengelola paket
+      router.push("/profil");
+    } else {
+      // Jika belum login, pergi ke daftar dengan paket terpilih
+      router.push(`/register?plan=${planId}`);
+    }
+  };
+
   return (
     <div className="flex flex-col">
-      {/* Hero Section */}
+      {/* Bagian Hero */}
       <section className="relative w-full min-h-[calc(100vh-64px)] flex items-center overflow-hidden">
-        {/* Background Image */}
+        {/* Gambar Latar Belakang */}
         <div className="absolute inset-0 z-0">
           <img
             src="/images/background_beranda.jpg"
             alt="Gym Background"
             className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-black/60" /> {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-black/60" />{" "}
+          {/* Overlay gelap untuk keterbacaan teks */}
           <div className="absolute inset-0 bg-linear-to-t from-background to-transparent" />
         </div>
 
@@ -43,17 +75,17 @@ export default function Home() {
             </h1>
 
             <p className="text-xl md:text-2xl text-zinc-300 font-light max-w-2xl mx-auto leading-relaxed drop-shadow-md">
-              Buka potensi Anda dengan latihan terkurasi, pelacakan nutrisi presisi, dan komunitas
-              yang mendukung Anda.
+              Buka potensi Anda dengan latihan terkurasi, pelacakan nutrisi
+              presisi, dan komunitas yang mendukung Anda.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button
-                asChild
                 size="lg"
-                className="bg-primary text-black hover:bg-[oklch(0.8972_0.1786_126.67)] rounded-full px-8 py-6 text-lg font-black italic tracking-wider shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:scale-105 transition-transform"
+                className="bg-primary text-black hover:bg-[oklch(0.8972_0.1786_126.67)] rounded-full px-8 py-6 text-lg font-black italic tracking-wider shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:scale-105 transition-transform cursor-pointer"
+                onClick={aksiHero}
               >
-                <Link href="/#membership">DAFTAR SEKARANG</Link>
+                {user ? "LIHAT PROFIL" : "DAFTAR SEKARANG"}
               </Button>
               <Button
                 asChild
@@ -73,11 +105,12 @@ export default function Home() {
         <div className="container px-8 md:px-30 mx-auto">
           <div className="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <h2 className="text-3xl md:text-5xl font-bold tracking-tighter text-foreground mb-4">
-              Segala yang Anda Butuhkan untuk <span className="text-primary">Sukses</span>
+              Segala yang Anda Butuhkan untuk{" "}
+              <span className="text-primary">Sukses</span>
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-              Kami menyediakan alat, panduan, dan dukungan komunitas untuk membantu Anda mencapai
-              tujuan kebugaran lebih cepat.
+              Kami menyediakan alat, panduan, dan dukungan komunitas untuk
+              membantu Anda mencapai tujuan kebugaran lebih cepat.
             </p>
           </div>
 
@@ -90,8 +123,8 @@ export default function Home() {
                 </div>
                 <CardTitle className="text-xl">Latihan dari Ahli</CardTitle>
                 <CardDescription>
-                  Akses ratusan rencana latihan yang dirancang secara profesional untuk setiap
-                  tingkat kebugaran.
+                  Akses ratusan rencana latihan yang dirancang secara
+                  profesional untuk setiap tingkat kebugaran.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -104,8 +137,8 @@ export default function Home() {
                 </div>
                 <CardTitle className="text-xl">Nutrisi Cerdas</CardTitle>
                 <CardDescription>
-                  Lacak makro, kalori, dan dapatkan ide persiapan makanan yang dipersonalisasi untuk
-                  tubuh Anda.
+                  Lacak makro, kalori, dan dapatkan ide persiapan makanan yang
+                  dipersonalisasi untuk tubuh Anda.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -118,8 +151,8 @@ export default function Home() {
                 </div>
                 <CardTitle className="text-xl">Komunitas Berkembang</CardTitle>
                 <CardDescription>
-                  Bergabunglah di room, mengobrol dengan rekan, dan bagikan kemajuan Anda di
-                  lingkungan yang mendukung.
+                  Bergabunglah di room, mengobrol dengan rekan, dan bagikan
+                  kemajuan Anda di lingkungan yang mendukung.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -135,34 +168,42 @@ export default function Home() {
               Mengapa <span className="text-primary">UNP Gym</span>?
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">
-              Kami percaya kebugaran tidak harus rumit. Itulah sebabnya kami membangun platform yang
-              menggabungkan panduan profesional dengan alat yang mudah digunakan. Apakah Anda
-              seorang pemula atau atlet yang ingin memecahkan rekor, kami memiliki sesuatu untuk
-              Anda.
+              Kami percaya kebugaran tidak harus rumit. Itulah sebabnya kami
+              membangun platform yang menggabungkan panduan profesional dengan
+              alat yang mudah digunakan. Apakah Anda seorang pemula atau atlet
+              yang ingin memecahkan rekor, kami memiliki sesuatu untuk Anda.
             </p>
             <ul className="space-y-4 pt-4">
               <li className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center">
                   <CheckIcon className="w-4 h-4" />
                 </div>
-                <span className="text-foreground font-medium">Pelacakan Kemajuan Personal</span>
+                <span className="text-foreground font-medium">
+                  Pelacakan Kemajuan Personal
+                </span>
               </li>
               <li className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center">
                   <CheckIcon className="w-4 h-4" />
                 </div>
-                <span className="text-foreground font-medium">Tantangan & Acara Komunitas</span>
+                <span className="text-foreground font-medium">
+                  Tantangan & Acara Komunitas
+                </span>
               </li>
               <li className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center">
                   <CheckIcon className="w-4 h-4" />
                 </div>
-                <span className="text-foreground font-medium">Database Nutrisi Terverifikasi</span>
+                <span className="text-foreground font-medium">
+                  Database Nutrisi Terverifikasi
+                </span>
               </li>
             </ul>
             <div className="pt-6">
               <Button asChild size="lg" variant="default" className="shadow-lg">
-                <Link href="/profil">Buat Profil Anda</Link>
+                <Link href={user ? "/profil" : "/register"}>
+                  {user ? "Lihat Profil Anda" : "Buat Profil Anda"}
+                </Link>
               </Button>
             </div>
           </div>
@@ -186,7 +227,8 @@ export default function Home() {
               Pilih <span className="text-primary">Paket</span> Anda
             </h2>
             <p className="text-muted-foreground text-md">
-              Mulai perjalanan kebugaran Anda dengan paket yang fleksibel dan sesuai kebutuhan.
+              Mulai perjalanan kebugaran Anda dengan paket yang fleksibel dan
+              sesuai kebutuhan.
             </p>
           </div>
 
@@ -205,7 +247,9 @@ export default function Home() {
                 </p>
                 <div className="mt-4">
                   <span className="text-3xl font-black">Rp 300.000</span>
-                  <span className="text-muted-foreground font-medium">/bulan</span>
+                  <span className="text-muted-foreground font-medium">
+                    /bulan
+                  </span>
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
@@ -213,7 +257,9 @@ export default function Home() {
                   <div className="h-px bg-white/5 w-full" />
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-zinc-500" />
-                    <span className="text-zinc-300">Akses Gym 08:00 - 20:00</span>
+                    <span className="text-zinc-300">
+                      Akses Gym 08:00 - 20:00
+                    </span>
                   </div>
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-zinc-500" />
@@ -230,11 +276,11 @@ export default function Home() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button
-                  asChild
-                  className="w-full font-bold h-12 text-lg bg-zinc-800 text-white hover:bg-zinc-700 hover:text-white"
+                 <Button
+                  className="w-full font-bold h-12 text-lg bg-zinc-800 text-white hover:bg-zinc-700 hover:text-white cursor-pointer"
+                  onClick={() => pilihPaket('basic')}
                 >
-                  <Link href="/register?plan=basic">Pilih Paket</Link>
+                  Pilih Paket
                 </Button>
               </CardFooter>
             </Card>
@@ -252,13 +298,17 @@ export default function Home() {
                     <StarIcon className="w-8 h-8" />
                   </div>
                 </div>
-                <CardTitle className="text-2xl font-bold">Gold Member</CardTitle>
+                <CardTitle className="text-2xl font-bold">
+                  Gold Member
+                </CardTitle>
                 <p className="text-sm text-muted-foreground mt-2 min-h-[48px]">
                   Pilihan paling populer untuk hasil maksimal dan fleksibilitas.
                 </p>
                 <div className="mt-4">
                   <span className="text-3xl font-black">Rp 750.000</span>
-                  <span className="text-muted-foreground font-medium">/bulan</span>
+                  <span className="text-muted-foreground font-medium">
+                    /bulan
+                  </span>
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
@@ -266,7 +316,9 @@ export default function Home() {
                   <div className="h-px bg-white/5 w-full" />
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-primary" />
-                    <span className="text-zinc-300">Akses Semua Gym 24 Jam</span>
+                    <span className="text-zinc-300">
+                      Akses Semua Gym 24 Jam
+                    </span>
                   </div>
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-primary" />
@@ -274,7 +326,9 @@ export default function Home() {
                   </div>
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-primary" />
-                    <span className="text-zinc-300">Pelatih Pribadi 2x/bulan</span>
+                    <span className="text-zinc-300">
+                      Pelatih Pribadi 2x/bulan
+                    </span>
                   </div>
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-primary" />
@@ -288,10 +342,10 @@ export default function Home() {
               </CardContent>
               <CardFooter>
                 <Button
-                  asChild
-                  className="w-full font-bold h-12 text-lg bg-primary text-black hover:bg-primary/90 hover:scale-105 transition-transform"
+                  className="w-full font-bold h-12 text-lg bg-primary text-black hover:bg-primary/90 hover:scale-105 transition-transform cursor-pointer"
+                  onClick={() => pilihPaket('gold')}
                 >
-                  <Link href="/register?plan=gold">Pilih Paket</Link>
+                  Pilih Paket
                 </Button>
               </CardFooter>
             </Card>
@@ -310,7 +364,9 @@ export default function Home() {
                 </p>
                 <div className="mt-4">
                   <span className="text-3xl font-black">Rp 1.500.000</span>
-                  <span className="text-muted-foreground font-medium">/bulan</span>
+                  <span className="text-muted-foreground font-medium">
+                    /bulan
+                  </span>
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
@@ -318,15 +374,21 @@ export default function Home() {
                   <div className="h-px bg-white/5 w-full" />
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-zinc-500" />
-                    <span className="text-zinc-300">Akses Prioritas Tanpa Batas</span>
+                    <span className="text-zinc-300">
+                      Akses Prioritas Tanpa Batas
+                    </span>
                   </div>
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-zinc-500" />
-                    <span className="text-zinc-300">Unlimited Personal Trainer</span>
+                    <span className="text-zinc-300">
+                      Unlimited Personal Trainer
+                    </span>
                   </div>
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-zinc-500" />
-                    <span className="text-zinc-300">Akses Spa & Sauna Eksklusif</span>
+                    <span className="text-zinc-300">
+                      Akses Spa & Sauna Eksklusif
+                    </span>
                   </div>
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-zinc-500" />
@@ -334,16 +396,18 @@ export default function Home() {
                   </div>
                   <div className="flex items-start gap-3 text-sm">
                     <CheckIcon className="w-5 h-5 shrink-0 text-zinc-500" />
-                    <span className="text-zinc-300">Konsultasi Nutrisi Mingguan</span>
+                    <span className="text-zinc-300">
+                      Konsultasi Nutrisi Mingguan
+                    </span>
                   </div>
                 </div>
               </CardContent>
               <CardFooter>
-                <Button
-                  asChild
-                  className="w-full font-bold h-12 text-lg bg-zinc-800 text-white hover:bg-zinc-700 hover:text-white"
+                 <Button
+                  className="w-full font-bold h-12 text-lg bg-zinc-800 text-white hover:bg-zinc-700 hover:text-white cursor-pointer"
+                  onClick={() => pilihPaket('vip')}
                 >
-                  <Link href="/register?plan=vip">Pilih Paket</Link>
+                  Pilih Paket
                 </Button>
               </CardFooter>
             </Card>
