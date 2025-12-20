@@ -1,10 +1,22 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   CalendarIcon,
@@ -78,16 +90,18 @@ export default function ProfilPage() {
 
           if (userSnap.exists()) {
             const data = userSnap.data();
-            
+
             // Set paket aktif jika ada
             if (data.activePlan) {
               setActivePlan(data.activePlan);
 
               // Isi Order ID jika hilang untuk paket aktif (Dukungan versi lama)
               if (!data.orderId) {
-                 const newOrderId = `GYM-${Math.floor(10000 + Math.random() * 90000)}`;
-                 await updateDoc(userRef, { orderId: newOrderId });
-                 data.orderId = newOrderId; // Update untuk setFormData di bawah
+                const newOrderId = `GYM-${Math.floor(
+                  10000 + Math.random() * 90000
+                )}`;
+                await updateDoc(userRef, { orderId: newOrderId });
+                data.orderId = newOrderId; // Update untuk setFormData di bawah
               }
             }
 
@@ -196,7 +210,7 @@ export default function ProfilPage() {
     setIsSubmitting(true);
     try {
       const userRef = doc(db, "users", user.username);
-      
+
       const updatePayload: any = {
         name: formData.fullName,
         email: formData.email,
@@ -213,9 +227,9 @@ export default function ProfilPage() {
         // Generate Order ID BARU hanya saat ganti/aktivasi paket
         const newOrderId = `GYM-${Math.floor(10000 + Math.random() * 90000)}`;
         updatePayload.orderId = newOrderId;
-        
+
         // Update state lokal segera
-        setFormData(prev => ({ ...prev, orderId: newOrderId }));
+        setFormData((prev) => ({ ...prev, orderId: newOrderId }));
       }
 
       // Update Firestore
@@ -224,7 +238,7 @@ export default function ProfilPage() {
       if (!isEditing && selectedPlanId) {
         setActivePlan(selectedPlanId);
       }
-      
+
       setShowForm(false);
       setShowSuccess(true);
     } catch (error) {
@@ -235,7 +249,9 @@ export default function ProfilPage() {
     }
   };
 
-  const ubahInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const ubahInput = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
@@ -246,55 +262,62 @@ export default function ProfilPage() {
 
   const cetakStruk = () => {
     const originalTitle = document.title;
-    document.title = `Invoice_${formData.orderId || 'GYM'}_${formData.fullName.replace(/\s+/g, '_')}`;
+    document.title = `Invoice_${
+      formData.orderId || "GYM"
+    }_${formData.fullName.replace(/\s+/g, "_")}`;
     window.print();
     document.title = originalTitle;
   };
 
   const kirimEmail = async () => {
-    const activePlanDetails = plans.find(p => p.id === selectedPlanId);
+    const activePlanDetails = plans.find((p) => p.id === selectedPlanId);
     if (!activePlanDetails) return;
 
     // Pastikan Order ID tersedia (seharusnya sudah di-set oleh useEffect atau submit form)
     const currentOrderId = formData.orderId;
     if (!currentOrderId) {
-        alert("Order ID belum tersedia. Harap refresh halaman.");
-        return;
+      alert("Order ID belum tersedia. Harap refresh halaman.");
+      return;
     }
 
     setIsSendingEmail(true);
     try {
-        const response = await fetch('http://localhost:3001/send-invoice', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: formData.email,
-                name: formData.fullName,
-                packageName: activePlanDetails.name,
-                price: activePlanDetails.price,
-                date: new Date().toLocaleDateString('id-ID'),
-                orderId: currentOrderId
-            }),
-        });
+      const response = await fetch("http://localhost:3001/send-invoice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          name: formData.fullName,
+          packageName: activePlanDetails.name,
+          price: activePlanDetails.price,
+          date: new Date().toLocaleDateString("id-ID"),
+          orderId: currentOrderId,
+        }),
+      });
 
-        const result = await response.json();
-        
-        if (response.ok) {
-            setShowEmailSuccess(true);
-            setTimeout(() => {
-                setShowEmailSuccess(false);
-            }, 3000);
-        } else {
-            console.error("Respon Error Server:", result);
-            alert('Gagal mengirim email: ' + (result.details || result.error || 'Terjadi kesalahan pada server'));
-        }
+      const result = await response.json();
+
+      if (response.ok) {
+        setShowEmailSuccess(true);
+        setTimeout(() => {
+          setShowEmailSuccess(false);
+        }, 3000);
+      } else {
+        console.error("Respon Error Server:", result);
+        alert(
+          "Gagal mengirim email: " +
+            (result.details || result.error || "Terjadi kesalahan pada server")
+        );
+      }
     } catch (error) {
-        console.error('Error saat mengirim email:', error);
-        alert('Gagal menghubungi server email. Pastikan server backend berjalan.');
+      console.error("Error saat mengirim email:", error);
+      alert(
+        "Gagal menghubungi server email. Pastikan server backend berjalan."
+      );
     } finally {
-        setIsSendingEmail(false);
+      setIsSendingEmail(false);
     }
   };
 
@@ -305,19 +328,18 @@ export default function ProfilPage() {
         <div className="container mx-auto max-w-5xl flex flex-col md:flex-row items-center gap-8">
           {/* Avatar */}
           <div className="w-32 h-32 rounded-full bg-linear-to-br from-primary to-lime-600 flex items-center justify-center text-black shadow-2xl ring-4 ring-black/50">
-            <span className="text-5xl font-black italic">{user.name.charAt(0).toUpperCase()}</span>
+            <span className="text-5xl font-black italic">
+              {user.name.charAt(0).toUpperCase()}
+            </span>
           </div>
 
           {/* Info Pengguna */}
           <div className="flex-1 text-center md:text-left space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight text-white">{user.name}</h1>
+            <h1 className="text-4xl font-bold tracking-tight text-white">
+              {user.name}
+            </h1>
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-muted-foreground">
               <span className="text-lg">@{user.username}</span>
-              <span className="hidden md:inline">•</span>
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-zinc-800/50 rounded-full text-sm">
-                <CalendarIcon className="w-3.5 h-3.5" />
-                Member
-              </span>
             </div>
           </div>
 
@@ -341,10 +363,12 @@ export default function ProfilPage() {
 
       <div className="container mx-auto max-w-6xl px-4 py-12">
         <div className="flex flex-col items-center mb-10 text-center">
-          <h2 className="text-3xl font-bold tracking-tight mb-2">Pilihan Paket Membership</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-2">
+            Pilihan Paket Membership
+          </h2>
           <p className="text-muted-foreground max-w-xl">
-            Upgrade membership Anda untuk mendapatkan akses lebih banyak fasilitas dan manfaat
-            eksklusif.
+            Upgrade membership Anda untuk mendapatkan akses lebih banyak
+            fasilitas dan manfaat eksklusif.
           </p>
         </div>
 
@@ -364,11 +388,15 @@ export default function ProfilPage() {
                 }`}
                 onClick={() => isCurrent && pilihPaket(plan.id)}
               >
-                {isCurrent && <div className="absolute top-0 inset-x-0 bg-primary h-1" />}
+                {isCurrent && (
+                  <div className="absolute top-0 inset-x-0 bg-primary h-1" />
+                )}
 
                 <CardHeader>
                   <div className="flex justify-between items-start mb-4">
-                    <div className={`p-3 rounded-xl bg-zinc-950/50 ${plan.color}`}>
+                    <div
+                      className={`p-3 rounded-xl bg-zinc-950/50 ${plan.color}`}
+                    >
                       <plan.icon className="w-8 h-8" />
                     </div>
                     {isCurrent && (
@@ -377,13 +405,17 @@ export default function ProfilPage() {
                       </span>
                     )}
                   </div>
-                  <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                  <CardTitle className="text-2xl font-bold">
+                    {plan.name}
+                  </CardTitle>
                   <p className="text-sm text-muted-foreground mt-2 min-h-[40px]">
                     {plan.description}
                   </p>
                   <div className="mt-4">
                     <span className="text-3xl font-black">{plan.price}</span>
-                    <span className="text-muted-foreground font-medium">/bulan</span>
+                    <span className="text-muted-foreground font-medium">
+                      /bulan
+                    </span>
                   </div>
                 </CardHeader>
 
@@ -410,10 +442,10 @@ export default function ProfilPage() {
                         ? "bg-zinc-800 hover:bg-zinc-700 text-white cursor-pointer hover:bg-zinc-600"
                         : "bg-primary text-black hover:bg-primary/90"
                     }`}
-                     onClick={(e) => {
-                         e.stopPropagation();
-                         pilihPaket(plan.id);
-                     }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      pilihPaket(plan.id);
+                    }}
                   >
                     {isCurrent ? "Lihat Detail Invoice" : "Pilih Paket"}
                   </Button>
@@ -427,147 +459,208 @@ export default function ProfilPage() {
       {/* Modal Invoice - Tampilan WEB (Tema Gelap) */}
       {showInvoice && selectedPlanId && (
         <>
-           {/* Modal Layar */}
-           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200 print:hidden">
+          {/* Modal Layar */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200 print:hidden">
             <Card className="w-full max-w-lg bg-zinc-950 border-zinc-800 shadow-2xl animate-in zoom-in-95 duration-200">
-                <CardHeader className="bg-zinc-900/50 border-b border-zinc-800">
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            <ReceiptIcon className="w-5 h-5 text-primary" />
-                            <CardTitle>Invoice Pembayaran</CardTitle>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={() => setShowInvoice(false)}>
-                            <XIcon className="w-5 h-5" />
-                        </Button>
+              <CardHeader className="bg-zinc-900/50 border-b border-zinc-800">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <ReceiptIcon className="w-5 h-5 text-primary" />
+                    <CardTitle>Invoice Pembayaran</CardTitle>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowInvoice(false)}
+                  >
+                    <XIcon className="w-5 h-5" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                {/* Detail Invoice */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center pb-4 border-b border-zinc-800">
+                    <div>
+                      <p className="text-sm text-zinc-400">Order ID</p>
+                      <p className="font-mono text-white tracking-widest">
+                        {formData.orderId || "PENDING"}
+                      </p>
+                      <div className="mt-1">
+                        <span className="inline-flex items-center gap-1 text-primary font-bold bg-primary/10 px-2 py-0.5 rounded text-xs border border-primary/20">
+                          <CheckCircle2Icon className="w-3 h-3" /> LUNAS
+                        </span>
+                      </div>
                     </div>
-                </CardHeader>
-                <CardContent className="p-6 space-y-6">
-                    {/* Detail Invoice */}
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center pb-4 border-b border-zinc-800">
-                             <div>
-                                <p className="text-sm text-zinc-400">Order ID</p>
-                                <p className="font-mono text-white tracking-widest">{formData.orderId || "PENDING"}</p>
-                                <div className="mt-1">
-                                    <span className="inline-flex items-center gap-1 text-primary font-bold bg-primary/10 px-2 py-0.5 rounded text-xs border border-primary/20">
-                                        <CheckCircle2Icon className="w-3 h-3"/> LUNAS
-                                    </span>
-                                </div>
-                             </div>
-                             <div className="text-right">
-                                 <p className="text-sm text-zinc-400">Tanggal</p>
-                                 <p className="font-medium text-white">{new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric'})}</p>
-                             </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-sm text-zinc-400">Nama</p>
-                                <p className="font-semibold text-white truncate">{formData.fullName}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-zinc-400">Email</p>
-                                <p className="font-semibold text-white truncate">{formData.email}</p>
-                            </div>
-                             <div>
-                                <p className="text-sm text-zinc-400">Nomor HP</p>
-                                <p className="font-semibold text-white">{formData.phone}</p>
-                            </div>
-                             <div>
-                                <p className="text-sm text-zinc-400">Paket</p>
-                                <p className="font-semibold text-primary">{plans.find(p => p.id === selectedPlanId)?.name}</p>
-                            </div>
-                        </div>
+                    <div className="text-right">
+                      <p className="text-sm text-zinc-400">Tanggal</p>
+                      <p className="font-medium text-white">
+                        {new Date().toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  </div>
 
-                         <div className="p-4 bg-zinc-900 rounded-lg flex justify-between items-center">
-                            <span className="text-zinc-400">Total Pembayaran</span>
-                            <span className="text-2xl font-bold text-white">{plans.find(p => p.id === selectedPlanId)?.price}</span>
-                        </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-zinc-400">Nama</p>
+                      <p className="font-semibold text-white truncate">
+                        {formData.fullName}
+                      </p>
                     </div>
-                </CardContent>
-                <CardFooter className="flex gap-3 bg-zinc-900/30 p-6 border-t border-zinc-800">
-                    <Button variant="outline" className="flex-1 gap-2 border-zinc-700" onClick={cetakStruk}>
-                        <PrinterIcon className="w-4 h-4" />
-                        Cetak PDF
-                    </Button>
-                    <Button className="flex-1 gap-2 bg-primary text-black hover:bg-primary/90" onClick={kirimEmail} disabled={isSendingEmail}>
-                        {isSendingEmail ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <MailIcon className="w-4 h-4" />
-                        )}
-                        Kirim ke Email
-                    </Button>
-                </CardFooter>
+                    <div>
+                      <p className="text-sm text-zinc-400">Email</p>
+                      <p className="font-semibold text-white truncate">
+                        {formData.email}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-zinc-400">Nomor HP</p>
+                      <p className="font-semibold text-white">
+                        {formData.phone}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-zinc-400">Paket</p>
+                      <p className="font-semibold text-primary">
+                        {plans.find((p) => p.id === selectedPlanId)?.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-zinc-900 rounded-lg flex justify-between items-center">
+                    <span className="text-zinc-400">Total Pembayaran</span>
+                    <span className="text-2xl font-bold text-white">
+                      {plans.find((p) => p.id === selectedPlanId)?.price}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex gap-3 bg-zinc-900/30 p-6 border-t border-zinc-800">
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2 border-zinc-700"
+                  onClick={cetakStruk}
+                >
+                  <PrinterIcon className="w-4 h-4" />
+                  Cetak PDF
+                </Button>
+                <Button
+                  className="flex-1 gap-2 bg-primary text-black hover:bg-primary/90"
+                  onClick={kirimEmail}
+                  disabled={isSendingEmail}
+                >
+                  {isSendingEmail ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <MailIcon className="w-4 h-4" />
+                  )}
+                  Kirim ke Email
+                </Button>
+              </CardFooter>
             </Card>
-           </div>
-           
-           {/* TAMPILAN CETAK SAJA (Gaya Struk) */}
-           <div className="hidden printable-area">
-              <div className="w-[380px] border border-gray-200 bg-white text-black p-8 font-mono text-sm shadow-sm relative overflow-hidden">
-                    {/* Hiasan Atas */}
-                    <div className="absolute top-0 left-0 w-full h-2 bg-[repeating-linear-gradient(45deg,#000,#000_10px,#fff_10px,#fff_20px)] opacity-10"></div>
-                 
-                     {/* Header */}
-                     <div className="text-center space-y-2 pb-6 border-b-2 border-dashed border-gray-300">
-                        <div className="flex justify-center mb-2">
-                            <div className="p-2 bg-black text-white rounded-lg">
-                                <DumbbellIcon className="w-6 h-6" />
-                            </div>
-                        </div>
-                        <h2 className="text-xl font-black uppercase tracking-widest text-black">UNP GYM RECEIPT</h2>
-                        <p className="text-xs text-gray-500">Jalan Prof. Dr. Hamka, Air Tawar<br/>Padang, Sumatera Barat</p>
-                     </div>
+          </div>
 
-                     {/* Meta */}
-                     <div className="flex justify-between text-xs text-gray-500 py-3">
-                         <span>{new Date().toLocaleDateString('id-ID')}</span>
-                         <span>{new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</span>
-                     </div>
+          {/* TAMPILAN CETAK SAJA (Gaya Struk) */}
+          <div className="hidden printable-area">
+            <div className="w-[380px] border border-gray-200 bg-white text-black p-8 font-mono text-sm shadow-sm relative overflow-hidden">
+              {/* Hiasan Atas */}
+              <div className="absolute top-0 left-0 w-full h-2 bg-[repeating-linear-gradient(45deg,#000,#000_10px,#fff_10px,#fff_20px)] opacity-10"></div>
 
-                     {/* Barang/Item */}
-                     <div className="py-4 space-y-3">
-                         <div className="flex justify-between items-end border-b border-gray-100 pb-2">
-                             <span className="text-gray-500 text-xs uppercase">No. Order</span>
-                             <span className="font-bold tracking-widest">{formData.orderId || "GYM-REF"}</span>
-                         </div>
-                         <div className="flex justify-between items-end border-b border-gray-100 pb-2">
-                             <span className="text-gray-500 text-xs uppercase">Member</span>
-                             <span className="font-bold uppercase">{formData.fullName}</span>
-                         </div>
-                         <div className="flex justify-between items-end border-b border-gray-100 pb-2">
-                             <span className="text-gray-500 text-xs uppercase">Paket</span>
-                             <span className="font-bold uppercase text-lime-700">{plans.find(p => p.id === selectedPlanId)?.name}</span>
-                         </div>
-                     </div>
-
-                     {/* Total */}
-                     <div className="flex justify-between items-center py-6 border-b-2 border-dashed border-gray-300">
-                         <span className="text-lg font-bold">TOTAL</span>
-                         <span className="text-2xl font-black text-black">{plans.find(p => p.id === selectedPlanId)?.price}</span>
-                     </div>
-                     
-                     {/* Status Footer */}
-                     <div className="text-center pt-8 space-y-4">
-                         <div className="inline-block px-4 py-1 border-2 border-black rounded uppercase font-bold text-xs tracking-widest">
-                             LUNAS
-                         </div>
-                         <p className="text-xs text-gray-400">Terima kasih telah bergabung dengan kami!</p>
-                     </div>
-
-                     {/* Garis Potong */}
-                     <div className="absolute bottom-0 left-0 w-full flex justify-between px-2 pb-2 opacity-30">
-                        {"- - - - - - - - - - - - - - - - - - - - - - - - -".split("").map((c,i)=><span key={i}>{c}</span>)}
-                     </div>
+              {/* Header */}
+              <div className="text-center space-y-2 pb-6 border-b-2 border-dashed border-gray-300">
+                <div className="flex justify-center mb-2">
+                  <div className="p-2 bg-black text-white rounded-lg">
+                    <DumbbellIcon className="w-6 h-6" />
+                  </div>
+                </div>
+                <h2 className="text-xl font-black uppercase tracking-widest text-black">
+                  UNP GYM RECEIPT
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Jalan Prof. Dr. Hamka, Air Tawar
+                  <br />
+                  Padang, Sumatera Barat
+                </p>
               </div>
-           </div>
+
+              {/* Meta */}
+              <div className="flex justify-between text-xs text-gray-500 py-3">
+                <span>{new Date().toLocaleDateString("id-ID")}</span>
+                <span>
+                  {new Date().toLocaleTimeString("id-ID", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+
+              {/* Barang/Item */}
+              <div className="py-4 space-y-3">
+                <div className="flex justify-between items-end border-b border-gray-100 pb-2">
+                  <span className="text-gray-500 text-xs uppercase">
+                    No. Order
+                  </span>
+                  <span className="font-bold tracking-widest">
+                    {formData.orderId || "GYM-REF"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-end border-b border-gray-100 pb-2">
+                  <span className="text-gray-500 text-xs uppercase">
+                    Member
+                  </span>
+                  <span className="font-bold uppercase">
+                    {formData.fullName}
+                  </span>
+                </div>
+                <div className="flex justify-between items-end border-b border-gray-100 pb-2">
+                  <span className="text-gray-500 text-xs uppercase">Paket</span>
+                  <span className="font-bold uppercase text-lime-700">
+                    {plans.find((p) => p.id === selectedPlanId)?.name}
+                  </span>
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="flex justify-between items-center py-6 border-b-2 border-dashed border-gray-300">
+                <span className="text-lg font-bold">TOTAL</span>
+                <span className="text-2xl font-black text-black">
+                  {plans.find((p) => p.id === selectedPlanId)?.price}
+                </span>
+              </div>
+
+              {/* Status Footer */}
+              <div className="text-center pt-8 space-y-4">
+                <div className="inline-block px-4 py-1 border-2 border-black rounded uppercase font-bold text-xs tracking-widest">
+                  LUNAS
+                </div>
+                <p className="text-xs text-gray-400">
+                  Terima kasih telah bergabung dengan kami!
+                </p>
+              </div>
+
+              {/* Garis Potong */}
+              <div className="absolute bottom-0 left-0 w-full flex justify-between px-2 pb-2 opacity-30">
+                {"- - - - - - - - - - - - - - - - - - - - - - - - -"
+                  .split("")
+                  .map((c, i) => (
+                    <span key={i}>{c}</span>
+                  ))}
+              </div>
+            </div>
+          </div>
         </>
       )}
 
       {/* Modal Sukses Email */}
       <AlertDialog open={showEmailSuccess} onOpenChange={setShowEmailSuccess}>
         <AlertDialogContent className="bg-zinc-950 border border-zinc-900 shadow-2xl overflow-hidden max-w-sm p-0">
-          <AlertDialogTitle className="sr-only">Email Terkirim</AlertDialogTitle>
+          <AlertDialogTitle className="sr-only">
+            Email Terkirim
+          </AlertDialogTitle>
           <div className="flex flex-col items-center justify-center p-8 text-center bg-zinc-950/50">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-6 ring-4 ring-primary/10 animate-bounce cursor-default">
               <MailIcon className="w-8 h-8 text-primary" />
@@ -576,26 +669,35 @@ export default function ProfilPage() {
               TERKIRIM!
             </h2>
             <p className="text-zinc-400 text-sm leading-relaxed mb-6">
-              Invoice telah berhasil dikirim ke email <span className="text-white font-semibold">{formData.email}</span>
+              Invoice telah berhasil dikirim ke email{" "}
+              <span className="text-white font-semibold">{formData.email}</span>
             </p>
           </div>
-          
-           {/* Animasi Bar Progress */}
-           <div className="h-1 w-full bg-zinc-900">
-               <div className="h-full bg-primary animate-[progress_3s_ease-in-out_forwards]" />
-           </div>
+
+          {/* Animasi Bar Progress */}
+          <div className="h-1 w-full bg-zinc-900">
+            <div className="h-full bg-primary animate-[progress_3s_ease-in-out_forwards]" />
+          </div>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Modal Formulir Registrasi/Edit Profil */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <Card className={`w-full ${isEditing ? 'max-w-md' : 'max-w-2xl'} bg-zinc-950 border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 transition-all`}>
+          <Card
+            className={`w-full ${
+              isEditing ? "max-w-md" : "max-w-2xl"
+            } bg-zinc-950 border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 transition-all`}
+          >
             <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-zinc-950 z-10 border-b border-zinc-800">
               <div>
-                <CardTitle>{isEditing ? "Edit Profil" : "Lengkapi Data Diri"}</CardTitle>
+                <CardTitle>
+                  {isEditing ? "Edit Profil" : "Lengkapi Data Diri"}
+                </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {isEditing ? "Perbarui informasi pribadi Anda." : "Mohon isi data berikut untuk mengaktifkan paket Anda."}
+                  {isEditing
+                    ? "Perbarui informasi pribadi Anda."
+                    : "Mohon isi data berikut untuk mengaktifkan paket Anda."}
                 </p>
               </div>
               <Button
@@ -609,7 +711,11 @@ export default function ProfilPage() {
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={simpanData} className="space-y-6">
-                <div className={`grid grid-cols-1 ${!isEditing ? 'md:grid-cols-2' : ''} gap-6`}>
+                <div
+                  className={`grid grid-cols-1 ${
+                    !isEditing ? "md:grid-cols-2" : ""
+                  } gap-6`}
+                >
                   <div className="space-y-2">
                     <Label htmlFor="fullName" className="text-zinc-300">
                       Nama Lengkap
@@ -660,7 +766,11 @@ export default function ProfilPage() {
                         <Label htmlFor="gender" className="text-zinc-300">
                           Jenis Kelamin
                         </Label>
-                        <Select onValueChange={(val) => ubahPilihan("gender", val)} required defaultValue={formData.gender}>
+                        <Select
+                          onValueChange={(val) => ubahPilihan("gender", val)}
+                          required
+                          defaultValue={formData.gender}
+                        >
                           <SelectTrigger className="bg-zinc-900 border-zinc-700 focus:ring-primary">
                             <SelectValue placeholder="Pilih jenis kelamin" />
                           </SelectTrigger>
@@ -689,7 +799,11 @@ export default function ProfilPage() {
                         <Label htmlFor="goal" className="text-zinc-300">
                           Tujuan Latihan
                         </Label>
-                        <Select onValueChange={(val) => ubahPilihan("goal", val)} required defaultValue={formData.goal}>
+                        <Select
+                          onValueChange={(val) => ubahPilihan("goal", val)}
+                          required
+                          defaultValue={formData.goal}
+                        >
                           <SelectTrigger className="bg-zinc-900 border-zinc-700 focus:ring-primary">
                             <SelectValue placeholder="Pilih tujuan latihan" />
                           </SelectTrigger>
@@ -697,9 +811,15 @@ export default function ProfilPage() {
                             <SelectItem value="Menurunkan Berat Badan">
                               Menurunkan Berat Badan
                             </SelectItem>
-                            <SelectItem value="Membentuk Otot">Membentuk Otot</SelectItem>
-                            <SelectItem value="Meningkatkan Stamina">Meningkatkan Stamina</SelectItem>
-                            <SelectItem value="Kesehatan Umum">Kesehatan Umum</SelectItem>
+                            <SelectItem value="Membentuk Otot">
+                              Membentuk Otot
+                            </SelectItem>
+                            <SelectItem value="Meningkatkan Stamina">
+                              Meningkatkan Stamina
+                            </SelectItem>
+                            <SelectItem value="Kesehatan Umum">
+                              Kesehatan Umum
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -737,13 +857,15 @@ export default function ProfilPage() {
                     className="bg-primary text-black hover:bg-primary/90 font-bold px-8"
                     disabled={isSubmitting}
                   >
-                     {isSubmitting ? (
+                    {isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Menyimpan...
                       </>
+                    ) : isEditing ? (
+                      "Simpan Perubahan"
                     ) : (
-                      isEditing ? "Simpan Perubahan" : "Simpan & Aktifkan Paket"
+                      "Simpan & Aktifkan Paket"
                     )}
                   </Button>
                 </div>
@@ -761,7 +883,7 @@ export default function ProfilPage() {
               <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-2 animate-in zoom-in duration-500 delay-150">
                 <CheckCircle2Icon className="w-12 h-12 text-primary drop-shadow-[0_0_10px_rgba(163,230,53,0.5)]" />
               </div>
-              
+
               <div className="space-y-2">
                 <h3 className="text-3xl font-black italic tracking-tighter text-white">
                   {isEditing ? "BERHASIL!" : "SELAMAT!"}
@@ -771,7 +893,11 @@ export default function ProfilPage() {
                     "Profil Anda berhasil diperbarui."
                   ) : (
                     <>
-                    Paket <span className="text-primary font-bold">{plans.find(p => p.id === activePlan)?.name}</span> berhasil diaktifkan.
+                      Paket{" "}
+                      <span className="text-primary font-bold">
+                        {plans.find((p) => p.id === activePlan)?.name}
+                      </span>{" "}
+                      berhasil diaktifkan.
                     </>
                   )}
                 </p>
@@ -780,16 +906,20 @@ export default function ProfilPage() {
               <div className="w-full bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
                 <p className="text-sm text-zinc-400">
                   {isEditing ? (
-                     "Data profil terbaru Anda telah tersimpan."
+                    "Data profil terbaru Anda telah tersimpan."
                   ) : (
                     <>
-                    Terima kasih <span className="text-white font-semibold">{formData.fullName}</span>, perjalanan kebugaran Anda dimulai sekarang!
+                      Terima kasih{" "}
+                      <span className="text-white font-semibold">
+                        {formData.fullName}
+                      </span>
+                      , perjalanan kebugaran Anda dimulai sekarang!
                     </>
                   )}
                 </p>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => setShowSuccess(false)}
                 className="w-full bg-primary text-black font-black text-lg h-12 tracking-wide hover:bg-primary/90 hover:scale-105 transition-all"
               >
@@ -802,6 +932,3 @@ export default function ProfilPage() {
     </div>
   );
 }
-
-
-

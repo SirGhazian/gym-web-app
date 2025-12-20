@@ -276,9 +276,9 @@ export default function Home() {
                 </div>
               </CardContent>
               <CardFooter>
-                 <Button
+                <Button
                   className="w-full font-bold h-12 text-lg bg-zinc-800 text-white hover:bg-zinc-700 hover:text-white cursor-pointer"
-                  onClick={() => pilihPaket('basic')}
+                  onClick={() => pilihPaket("basic")}
                 >
                   Pilih Paket
                 </Button>
@@ -343,7 +343,7 @@ export default function Home() {
               <CardFooter>
                 <Button
                   className="w-full font-bold h-12 text-lg bg-primary text-black hover:bg-primary/90 hover:scale-105 transition-transform cursor-pointer"
-                  onClick={() => pilihPaket('gold')}
+                  onClick={() => pilihPaket("gold")}
                 >
                   Pilih Paket
                 </Button>
@@ -403,9 +403,9 @@ export default function Home() {
                 </div>
               </CardContent>
               <CardFooter>
-                 <Button
+                <Button
                   className="w-full font-bold h-12 text-lg bg-zinc-800 text-white hover:bg-zinc-700 hover:text-white cursor-pointer"
-                  onClick={() => pilihPaket('vip')}
+                  onClick={() => pilihPaket("vip")}
                 >
                   Pilih Paket
                 </Button>
