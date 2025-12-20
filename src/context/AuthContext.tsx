@@ -23,13 +23,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Check for saved session on mount
+    // Cek sesi yang tersimpan saat mount
     const savedUser = localStorage.getItem("gym_user");
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (error) {
-        console.error("Failed to parse user session:", error);
+        console.error("Gagal mengurai sesi pengguna:", error);
         localStorage.removeItem("gym_user");
       }
     }

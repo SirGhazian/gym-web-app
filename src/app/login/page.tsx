@@ -46,7 +46,6 @@ export default function LoginPage() {
         throw new Error("Password salah.");
       }
 
-      // Berhasil - Simpan sesi sederhana ke localStorage
       // Berhasil - Simpan sesi sederhana via Context
       login({
         username: checkUsername,
@@ -55,7 +54,7 @@ export default function LoginPage() {
 
       router.push("/");
     } catch (error: any) {
-      console.error("Login Error:", error);
+      console.error("Gagal Masuk:", error);
       let errorMessage = error.message || "Gagal masuk.";
 
       if (error.code === "permission-denied") {

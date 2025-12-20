@@ -99,7 +99,7 @@ export default function RoomChatPage() {
     };
   }, [user]);
 
-  const handleEnterRoom = (e?: React.FormEvent, roomNum?: string) => {
+  const masukRoom = (e?: React.FormEvent, roomNum?: string) => {
     if (e) e.preventDefault();
     const finalRoomNumber = roomNum || roomNumber;
 
@@ -117,12 +117,12 @@ export default function RoomChatPage() {
     setStep("chat");
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const kirimPesan = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !user) return;
 
     const now = new Date();
-    const timeString = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    // const timeString = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     // Kirim Pesan
     socket.emit("send_message", {
@@ -136,7 +136,7 @@ export default function RoomChatPage() {
     setInputText("");
   };
 
-  const exitRoom = () => {
+  const keluarRoom = () => {
     setStep("input");
     setMessages([]);
     setRoomNumber("");
@@ -165,7 +165,7 @@ export default function RoomChatPage() {
                 </div>
               </div>
 
-              <form onSubmit={handleEnterRoom} className="space-y-4">
+              <form onSubmit={masukRoom} className="space-y-4">
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Nomor Room</p>
                   <div className="relative">
@@ -206,7 +206,7 @@ export default function RoomChatPage() {
                   activeRooms.map((room) => (
                     <button
                       key={room.id}
-                      onClick={() => handleEnterRoom(undefined, room.roomNumber)}
+                      onClick={() => masukRoom(undefined, room.roomNumber)}
                       className="w-full flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-primary/20 hover:border-primary/50 border border-transparent transition-all group"
                     >
                       <div className="flex items-center gap-3">
@@ -282,7 +282,7 @@ export default function RoomChatPage() {
               </AlertDialogHeader>
               <AlertDialogFooter className="mt-2">
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={exitRoom} className="bg-red-500 hover:bg-red-600">
+                <AlertDialogAction onClick={keluarRoom} className="bg-red-500 hover:bg-red-600">
                   Leave
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -316,7 +316,7 @@ export default function RoomChatPage() {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={exitRoom}
+                  onClick={keluarRoom}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   Leave
@@ -372,7 +372,7 @@ export default function RoomChatPage() {
 
         {/* Input Area */}
         <div className="p-4 border-t border-border bg-background/95 backdrop-blur p-safe-bottom shrink-0">
-          <form onSubmit={handleSendMessage} className="flex gap-2">
+          <form onSubmit={kirimPesan} className="flex gap-2">
             <Input
               placeholder="Type a message..."
               value={inputText}
