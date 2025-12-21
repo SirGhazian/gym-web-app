@@ -48,7 +48,7 @@ import { getDetailLatihan, DetailLatihan } from "../actions/exercise";
 import Link from "next/link";
 import { toast } from "sonner";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
 
 export default function ProfilPage() {
   const { user, logout } = useAuth();
