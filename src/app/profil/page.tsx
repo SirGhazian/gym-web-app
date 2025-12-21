@@ -48,6 +48,8 @@ import { getDetailLatihan, DetailLatihan } from "../actions/exercise";
 import Link from "next/link";
 import { toast } from "sonner";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
 export default function ProfilPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -335,8 +337,9 @@ export default function ProfilPage() {
     }
 
     setIsSendingEmail(true);
+    setIsSendingEmail(true);
     try {
-      const response = await fetch("http://localhost:3001/send-invoice", {
+      const response = await fetch(`${API_URL}/send-invoice`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
