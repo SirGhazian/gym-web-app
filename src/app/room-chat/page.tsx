@@ -21,7 +21,7 @@ import io, { Socket } from "socket.io-client";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
-// Definisikan URL Socket
+// URL Socket
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
 
 interface Message {
@@ -75,15 +75,25 @@ export default function RoomChatPage() {
   useEffect(() => {
     if (!user) return;
 
-    socket = io(SOCKET_URL);
+    console.log("Connecting to:", SOCKET_URL);
+
+    socket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"],
+      reconnectionAttempts: 5,
+    });
 
     socket.on("connect", () => {
-      console.log("Connected to socket server");
+      console.log("SOCKET CONNECTED! ID:", socket.id);
       // Minta room aktif saat terkoneksi
       socket.emit("get_active_rooms");
     });
 
+    socket.on("connect_error", (err) => {
+      console.error("SOCKET CONNECTION ERROR:", err.message);
+    });
+
     socket.on("active_rooms", (rooms: RoomData[]) => {
+      console.log("Active Rooms:", rooms);
       setActiveRooms(rooms);
     });
 
@@ -92,6 +102,7 @@ export default function RoomChatPage() {
     });
 
     socket.on("receive_history", (history: Message[]) => {
+      console.log("History received:", history.length);
       setMessages(history);
     });
 
