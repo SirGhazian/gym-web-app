@@ -46,7 +46,9 @@ function RegisterContent() {
         email: formData.email,
         password: formData.password, // Menyimpan teks biasa sesuai permintaan konteks penyimpanan DB sederhana
         createdAt: serverTimestamp(),
-        activePlan: null, // Inisialisasi paket kosong
+        fotoProfil: `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(
+          formData.name
+        )}`,
       });
 
       // Arahkan ke Login

@@ -29,6 +29,7 @@ interface Message {
   text: string;
   userId: string;
   authorName: string;
+  authorPhoto?: string;
   createdAt: string;
 }
 
@@ -129,6 +130,7 @@ export default function RoomChatPage() {
       room: roomNumber,
       username: user.username,
       author: user.name,
+      authorPhoto: user.fotoProfil,
       message: inputText,
       time: now.toISOString(),
     });
@@ -149,7 +151,7 @@ export default function RoomChatPage() {
   if (step === "input") {
     return (
       <div className={cn("flex items-center justify-center p-4 min-h-[calc(100svh-65px)]")}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Card Masuk Room */}
           <Card className="w-full bg-zinc-900 border-primary/20 h-[450px] flex flex-col justify-center">
             <CardContent className="pt-6">
@@ -239,8 +241,12 @@ export default function RoomChatPage() {
       <div className="hidden md:flex w-64 bg-zinc-900 border-r border-border flex-col">
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <User className="h-5 w-5 text-primary" />
+            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+              {user.fotoProfil ? (
+                <img src={user.fotoProfil} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <User className="h-5 w-5 text-primary" />
+              )}
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-sm">{user.name}</span>
@@ -281,9 +287,12 @@ export default function RoomChatPage() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="mt-2">
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={keluarRoom} className="bg-red-500 hover:bg-red-600">
-                  Leave
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={keluarRoom}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                >
+                  Keluar
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -339,8 +348,23 @@ export default function RoomChatPage() {
             return (
               <div
                 key={msg.id || index}
-                className={cn("flex w-full", isMe ? "justify-end" : "justify-start")}
+                className={cn("flex w-full gap-2", isMe ? "justify-end" : "justify-start")}
               >
+                {!isMe && (
+                  <div className="h-8 w-8 rounded-full bg-primary/20 shrink-0 overflow-hidden mt-1">
+                    {msg.authorPhoto ? (
+                      <img
+                        src={msg.authorPhoto}
+                        alt={msg.authorName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs font-bold text-primary">
+                        {msg.authorName?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div
                   className={cn(
                     "max-w-[80%] rounded-2xl px-4 py-2 text-sm",

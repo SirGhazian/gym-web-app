@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { AuthProvider } from "@/context/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({
         <AuthProvider>
           <Navbar />
           <main className="flex-1 w-full relative">{children}</main>
+          <Toaster />
         </AuthProvider>
       </body>
     </html>

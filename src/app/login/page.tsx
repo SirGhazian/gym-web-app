@@ -50,6 +50,7 @@ export default function LoginPage() {
       login({
         username: checkUsername,
         name: userData.name,
+        fotoProfil: userData.fotoProfil,
       });
 
       router.push("/");

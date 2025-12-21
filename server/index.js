@@ -12,7 +12,10 @@ if (dotenvResult.error) {
 
 console.log("Current Directory:", process.cwd());
 console.log("Env File Path:", path.resolve(__dirname, "../.env"));
-console.log("Loaded Env Keys:", Object.keys(process.env).filter(key => !key.startsWith("npm_") && !key.startsWith("Program")));
+console.log(
+  "Loaded Env Keys:",
+  Object.keys(process.env).filter((key) => !key.startsWith("npm_") && !key.startsWith("Program"))
+);
 console.log("Has EMAIL_USER?", !!process.env.EMAIL_USER);
 console.log("Has EMAIL_PASS?", !!process.env.EMAIL_PASS);
 
@@ -51,7 +54,7 @@ app.post("/send-invoice", async (req, res) => {
     console.error("ERROR: EMAIL_USER atau EMAIL_PASS tidak diset di file .env.");
     return res.status(500).json({
       error: "Kesalahan konfigurasi server: Kredensial email hilang.",
-      details: "Silakan periksa file .env di direktori server."
+      details: "Silakan periksa file .env di direktori server.",
     });
   }
   console.log("Menggunakan Email User:", process.env.EMAIL_USER);
@@ -158,7 +161,7 @@ app.post("/send-invoice", async (req, res) => {
     res.status(500).json({
       error: "Gagal mengirim email",
       details: error.message,
-      code: error.code
+      code: error.code,
     });
   }
 });
@@ -201,13 +204,14 @@ io.on("connection", (socket) => {
   // user mengirim pesan
   socket.on("send_message", (data) => {
     // data: { room, author, message, time }
-    const { room, author, message, time, username } = data;
+    const { room, author, message, time, username, authorPhoto } = data;
 
     const messageData = {
       id: Date.now().toString(), // id sederhana
       text: message,
       userId: username, // menggunakan username sebagai userId
       authorName: author,
+      authorPhoto: authorPhoto,
       createdAt: time,
     };
 

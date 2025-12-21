@@ -25,7 +25,7 @@ export function Navbar() {
         <div className="flex items-center justify-start">
           <Link href="/" className="flex items-center space-x-2">
             <Dumbbell className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg hidden md:inline-block">UNP Gym</span>
+            <span className="font-bold text-lg hidden md:inline-block">UNP.GYM</span>
           </Link>
         </div>
 

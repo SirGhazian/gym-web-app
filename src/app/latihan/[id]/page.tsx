@@ -7,15 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Heart } from "lucide-react";
 
 // Komponen utama halaman detail latihan
 export default function HalamanDetailLatihan() {
   const params = useParams();
   const id = params?.id as string;
 
+  const { user } = useAuth(); // Ambil user dari context
   const [latihan, setLatihan] = React.useState<DetailLatihan | null>(null);
   const [memuat, setMemuat] = React.useState(true);
   const [kesalahan, setKesalahan] = React.useState<string | null>(null);
+  const [apakahFavorit, setApakahFavorit] = React.useState(false); // State untuk status favorit
 
   React.useEffect(() => {
     if (!id) return;
@@ -40,6 +46,69 @@ export default function HalamanDetailLatihan() {
 
     ambilData();
   }, [id]);
+
+  // Efek untuk cek apakah latihan sudah difavoritkan saat user dimuat
+  React.useEffect(() => {
+    const cekStatusFavorit = async () => {
+      if (!user || !id) return;
+
+      try {
+        const userRef = doc(db, "users", user.username);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          // Cek apakah id ada di array favorit_latihan
+          if (
+            data.favorit_latihan &&
+            Array.isArray(data.favorit_latihan) &&
+            data.favorit_latihan.includes(id)
+          ) {
+            setApakahFavorit(true);
+          } else {
+            setApakahFavorit(false);
+          }
+        }
+      } catch (err) {
+        console.error("Gagal mengecek status favorit:", err);
+      }
+    };
+
+    cekStatusFavorit();
+  }, [user, id]);
+
+  // Fungsi untuk toggle favorit (tambah/hapus)
+  const ubahFavorit = async () => {
+    if (!user) {
+      alert("Silakan login untuk menyimpan favorit!");
+      return;
+    }
+
+    // Optimistic UI update (ubah tampilan dulu biar responsif)
+    const statusBaru = !apakahFavorit;
+    setApakahFavorit(statusBaru);
+
+    try {
+      const userRef = doc(db, "users", user.username);
+
+      if (statusBaru) {
+        // Tambahkan ke array menggunakan arrayUnion
+        await updateDoc(userRef, {
+          favorit_latihan: arrayUnion(id),
+        });
+      } else {
+        // Hapus dari array menggunakan arrayRemove
+        await updateDoc(userRef, {
+          favorit_latihan: arrayRemove(id),
+        });
+      }
+    } catch (err) {
+      console.error("Gagal mengubah favorit:", err);
+      // Rollback jika gagal
+      setApakahFavorit(!statusBaru);
+      alert("Gagal menyimpan perubahan favorit.");
+    }
+  };
 
   if (memuat) {
     return (
@@ -126,16 +195,30 @@ export default function HalamanDetailLatihan() {
         {/* Detail Latihan */}
         <div className="space-y-8">
           <div>
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-2 text-primary">
-              {latihan.nama}
-            </h1>
+            <div className="flex items-center justify-between gap-4 mb-2">
+              <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-primary">
+                {latihan.nama}
+              </h1>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={ubahFavorit}
+                className="rounded-full w-12 h-12 border-2 border-primary/20 bg-background/50 hover:bg-primary/10 hover:border-primary/50 transition-all shrink-0"
+                title={apakahFavorit ? "Hapus dari Favorit" : "Tambah ke Favorit"}
+              >
+                <Heart
+                  className={`w-6 h-6 transition-colors ${
+                    apakahFavorit ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                  }`}
+                />
+              </Button>
+            </div>
             <div className="flex flex-wrap gap-2 text-sm text-muted-foreground capitalize">
               <span>
                 Target: <span className="text-foreground">{latihan.ototTarget.join(", ")}</span>
               </span>
               {latihan.ototSekunder.length > 0 && (
                 <>
-                  <span>•</span>
                   <span>
                     Sekunder:{" "}
                     <span className="text-foreground">{latihan.ototSekunder.join(", ")}</span>

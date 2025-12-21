@@ -1,13 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -36,20 +30,29 @@ import {
 } from "lucide-react";
 import {
   AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { getDetailLatihan, DetailLatihan } from "../actions/exercise";
+import Link from "next/link";
+import { toast } from "sonner";
 
 export default function ProfilPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  const [activePlan, setActivePlan] = useState<string | null>(null);
+  const [paketAktif, setPaketAktif] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -58,17 +61,25 @@ export default function ProfilPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [latihanFavorit, setLatihanFavorit] = useState<DetailLatihan[]>([]); // State untuk menyimpan data latihan favorit
+  const [sedangMemuatFavorit, setSedangMemuatFavorit] = useState(false);
+  const [sedangMemuatFoto, setSedangMemuatFoto] = useState(true);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   // State Formulir
   const [formData, setFormData] = useState({
-    fullName: "",
+    namaLengkap: "",
     email: "",
-    phone: "",
-    gender: "",
-    dob: "",
-    address: "",
-    goal: "",
-    orderId: "",
+    nomorTelepon: "",
+    jenisKelamin: "",
+    tanggalLahir: "",
+    alamat: "",
+    tujuanLatihan: "",
+    idPesanan: "",
+    fotoProfil: "",
   });
 
   // Lindungi halaman dan Ambil Data
@@ -92,39 +103,69 @@ export default function ProfilPage() {
             const data = userSnap.data();
 
             // Set paket aktif jika ada
-            if (data.activePlan) {
-              setActivePlan(data.activePlan);
+            if (data.paketAktif) {
+              setPaketAktif(data.paketAktif);
 
-              // Isi Order ID jika hilang untuk paket aktif (Dukungan versi lama)
-              if (!data.orderId) {
-                const newOrderId = `GYM-${Math.floor(
-                  10000 + Math.random() * 90000
-                )}`;
-                await updateDoc(userRef, { orderId: newOrderId });
-                data.orderId = newOrderId; // Update untuk setFormData di bawah
+              // Isi Order ID jika hilang untuk paket aktif
+              if (!data.idPesanan) {
+                const newOrderId = `GYM-${Math.floor(10000 + Math.random() * 90000)}`;
+                await updateDoc(userRef, { idPesanan: newOrderId });
+                data.idPesanan = newOrderId; // Update untuk setFormData di bawah
               }
             }
 
             // Isi awal data formulir
             setFormData({
-              fullName: data.name || user.name || "",
+              namaLengkap: data.namaLengkap || data.name || user.name || "",
               email: data.email || "",
-              phone: data.phone || "",
-              gender: data.gender || "",
-              dob: data.dob || "",
-              address: data.address || "",
-              goal: data.goal || "",
-              orderId: data.orderId || "", // Ambil orderId
+              nomorTelepon: data.nomorTelepon || data.phone || "",
+              jenisKelamin: data.jenisKelamin || data.gender || "",
+              tanggalLahir: data.tanggalLahir || data.dob || "",
+              alamat: data.alamat || data.address || "",
+              tujuanLatihan: data.tujuanLatihan || data.goal || "",
+              idPesanan: data.idPesanan || "", // Ambil idPesanan
+              fotoProfil: data.fotoProfil || "",
             });
+
+            // Ambil data favorit jika ada
+            if (data.favorit_latihan && Array.isArray(data.favorit_latihan)) {
+              const idsFavorit = data.favorit_latihan;
+              if (idsFavorit.length > 0) {
+                setSedangMemuatFavorit(true);
+                // Fetch detail latihan secara paralel
+                Promise.all(idsFavorit.map((id: string) => getDetailLatihan(id)))
+                  .then((results) => {
+                    const dataLatihan = results
+                      .map((res) => res.data)
+                      .filter((item): item is DetailLatihan => !!item);
+                    setLatihanFavorit(dataLatihan);
+                  })
+                  .catch((err) => console.error("Gagal mengambil latihan favorit:", err))
+                  .finally(() => setSedangMemuatFavorit(false));
+              }
+            }
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
+        } finally {
+          setIsLoadingData(false);
         }
       }
     };
 
     checkUserAndFetchData();
   }, [user, router]);
+
+  // Effect terpisah untuk mengatur loading video
+  useEffect(() => {
+    if (isLoadingData) return; // Jangan ubah status loading foto jika data belum selesai diambil
+
+    if (formData.fotoProfil) {
+      setSedangMemuatFoto(true);
+    } else {
+      setSedangMemuatFoto(false);
+    }
+  }, [formData.fotoProfil, isLoadingData]);
 
   if (!user) {
     return null; // Atau spinner loading
@@ -186,7 +227,7 @@ export default function ProfilPage() {
 
   const pilihPaket = (planId: string) => {
     // Jika paket yang dipilih SUDAH aktif, tampilkan invoice
-    if (activePlan === planId) {
+    if (paketAktif === planId) {
       setSelectedPlanId(planId);
       setShowInvoice(true);
     } else {
@@ -212,31 +253,31 @@ export default function ProfilPage() {
       const userRef = doc(db, "users", user.username);
 
       const updatePayload: any = {
-        name: formData.fullName,
+        namaLengkap: formData.namaLengkap,
         email: formData.email,
-        phone: formData.phone,
-        gender: formData.gender,
-        dob: formData.dob,
-        address: formData.address,
-        goal: formData.goal,
+        nomorTelepon: formData.nomorTelepon,
+        jenisKelamin: formData.jenisKelamin,
+        tanggalLahir: formData.tanggalLahir,
+        alamat: formData.alamat,
+        tujuanLatihan: formData.tujuanLatihan,
       };
 
       // Hanya update activePlan jika tidak sedang edit profil
       if (!isEditing && selectedPlanId) {
-        updatePayload.activePlan = selectedPlanId;
+        updatePayload.paketAktif = selectedPlanId;
         // Generate Order ID BARU hanya saat ganti/aktivasi paket
         const newOrderId = `GYM-${Math.floor(10000 + Math.random() * 90000)}`;
-        updatePayload.orderId = newOrderId;
+        updatePayload.idPesanan = newOrderId;
 
         // Update state lokal segera
-        setFormData((prev) => ({ ...prev, orderId: newOrderId }));
+        setFormData((prev) => ({ ...prev, idPesanan: newOrderId }));
       }
 
       // Update Firestore
       await updateDoc(userRef, updatePayload);
 
       if (!isEditing && selectedPlanId) {
-        setActivePlan(selectedPlanId);
+        setPaketAktif(selectedPlanId);
       }
 
       setShowForm(false);
@@ -249,9 +290,7 @@ export default function ProfilPage() {
     }
   };
 
-  const ubahInput = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const ubahInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
@@ -262,9 +301,10 @@ export default function ProfilPage() {
 
   const cetakStruk = () => {
     const originalTitle = document.title;
-    document.title = `Invoice_${
-      formData.orderId || "GYM"
-    }_${formData.fullName.replace(/\s+/g, "_")}`;
+    document.title = `Invoice_${formData.idPesanan || "GYM"}_${formData.namaLengkap.replace(
+      /\s+/g,
+      "_"
+    )}`;
     window.print();
     document.title = originalTitle;
   };
@@ -274,9 +314,9 @@ export default function ProfilPage() {
     if (!activePlanDetails) return;
 
     // Pastikan Order ID tersedia (seharusnya sudah di-set oleh useEffect atau submit form)
-    const currentOrderId = formData.orderId;
+    const currentOrderId = formData.idPesanan;
     if (!currentOrderId) {
-      alert("Order ID belum tersedia. Harap refresh halaman.");
+      alert("ID Pesanan belum tersedia. Harap refresh halaman.");
       return;
     }
 
@@ -289,11 +329,11 @@ export default function ProfilPage() {
         },
         body: JSON.stringify({
           email: formData.email,
-          name: formData.fullName,
+          name: formData.namaLengkap,
           packageName: activePlanDetails.name,
           price: activePlanDetails.price,
           date: new Date().toLocaleDateString("id-ID"),
-          orderId: currentOrderId,
+          idPesanan: currentOrderId,
         }),
       });
 
@@ -313,11 +353,30 @@ export default function ProfilPage() {
       }
     } catch (error) {
       console.error("Error saat mengirim email:", error);
-      alert(
-        "Gagal menghubungi server email. Pastikan server backend berjalan."
-      );
+      alert("Gagal menghubungi server email. Pastikan server backend berjalan.");
     } finally {
       setIsSendingEmail(false);
+    }
+  };
+
+  const batalkanLangganan = async () => {
+    if (!user) return;
+    setIsSubmitting(true);
+    try {
+      const userRef = doc(db, "users", user.username);
+      await updateDoc(userRef, {
+        paketAktif: null,
+        idPesanan: null,
+      });
+      setPaketAktif(null);
+      setFormData((prev) => ({ ...prev, idPesanan: "" })); // Reset state lokal
+      setShowCancelConfirm(false);
+      toast.success("Langganan berhasil dibatalkan.");
+    } catch (error) {
+      console.error("Gagal membatalkan langganan:", error);
+      toast.error("Gagal membatalkan langganan. Silakan coba lagi.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -327,17 +386,36 @@ export default function ProfilPage() {
       <section className="relative pt-32 pb-12 px-4 bg-linear-to-b from-zinc-900 to-background border-b border-border/50">
         <div className="container mx-auto max-w-5xl flex flex-col md:flex-row items-center gap-8">
           {/* Avatar */}
-          <div className="w-32 h-32 rounded-full bg-linear-to-br from-primary to-lime-600 flex items-center justify-center text-black shadow-2xl ring-4 ring-black/50">
-            <span className="text-5xl font-black italic">
-              {user.name.charAt(0).toUpperCase()}
-            </span>
+          <div className="w-32 h-32 rounded-full flex items-center justify-center text-black shadow-2xl ring-4 ring-black/50 overflow-hidden relative">
+            {(isLoadingData || sedangMemuatFoto) && (
+              <Skeleton className="absolute inset-0 w-full h-full" />
+            )}
+
+            {formData.fotoProfil && (
+              <img
+                src={formData.fotoProfil}
+                alt={user.name}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${
+                  isLoadingData || sedangMemuatFoto ? "opacity-0" : "opacity-100"
+                }`}
+                onLoad={() => setSedangMemuatFoto(false)}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  setSedangMemuatFoto(false);
+                }}
+              />
+            )}
+
+            {!isLoadingData && !formData.fotoProfil && !sedangMemuatFoto && (
+              <span className="text-5xl font-black italic absolute">
+                {user.name.charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
 
           {/* Info Pengguna */}
           <div className="flex-1 text-center md:text-left space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight text-white">
-              {user.name}
-            </h1>
+            <h1 className="text-4xl font-bold tracking-tight text-white">{user.name}</h1>
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-muted-foreground">
               <span className="text-lg">@{user.username}</span>
             </div>
@@ -353,7 +431,10 @@ export default function ProfilPage() {
               <SettingsIcon className="w-4 h-4" />
               Edit Profil
             </Button>
-            <Button variant="destructive" className="gap-2" onClick={logout}>
+            <Button
+              className="gap-2 bg-red-500 hover:bg-red-600 text-white"
+              onClick={() => setShowLogoutConfirm(true)}
+            >
               <LogOut className="w-4 h-4" />
               Keluar
             </Button>
@@ -362,101 +443,298 @@ export default function ProfilPage() {
       </section>
 
       <div className="container mx-auto max-w-6xl px-4 py-12">
-        <div className="flex flex-col items-center mb-10 text-center">
-          <h2 className="text-3xl font-bold tracking-tight mb-2">
-            Pilihan Paket Membership
-          </h2>
-          <p className="text-muted-foreground max-w-xl">
-            Upgrade membership Anda untuk mendapatkan akses lebih banyak
-            fasilitas dan manfaat eksklusif.
-          </p>
-        </div>
+        {/* Bagian Latihan Favorit */}
+        <div className="mb-12">
+          <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+            <div className="text-center md:text-left">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2 justify-center md:justify-start">
+                <StarIcon className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+                Latihan Favorit Saya
+              </h2>
+              <p className="text-muted-foreground text-sm mt-1">
+                Akses cepat ke latihan yang Anda simpan.
+              </p>
+            </div>
+          </div>
 
-        {/* Grid Paket */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {plans.map((plan) => {
-            const isCurrent = activePlan === plan.id;
-            return (
-              <Card
-                key={plan.id}
-                className={`relative flex flex-col overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ${
-                  plan.bg
-                } ${plan.border} ${
-                  isCurrent
-                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/10 cursor-pointer"
-                    : "border border-zinc-800"
-                }`}
-                onClick={() => isCurrent && pilihPaket(plan.id)}
-              >
-                {isCurrent && (
-                  <div className="absolute top-0 inset-x-0 bg-primary h-1" />
-                )}
-
-                <CardHeader>
-                  <div className="flex justify-between items-start mb-4">
-                    <div
-                      className={`p-3 rounded-xl bg-zinc-950/50 ${plan.color}`}
-                    >
-                      <plan.icon className="w-8 h-8" />
-                    </div>
-                    {isCurrent && (
-                      <span className="px-3 py-1 rounded-full bg-primary text-black text-xs font-bold uppercase tracking-wider">
-                        Aktif
-                      </span>
-                    )}
-                  </div>
-                  <CardTitle className="text-2xl font-bold">
-                    {plan.name}
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground mt-2 min-h-[40px]">
-                    {plan.description}
-                  </p>
-                  <div className="mt-4">
-                    <span className="text-3xl font-black">{plan.price}</span>
-                    <span className="text-muted-foreground font-medium">
-                      /bulan
-                    </span>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="flex-1">
-                  <div className="space-y-4 pt-2">
-                    <div className="h-px bg-zinc-800 w-full" />
-                    {plan.features.map((feature, i) => (
-                      <div key={i} className="flex items-start gap-3 text-sm">
-                        <CheckIcon
-                          className={`w-5 h-5 shrink-0 ${
-                            isCurrent ? "text-primary" : "text-zinc-500"
-                          }`}
-                        />
-                        <span className="text-zinc-300">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-
-                <CardFooter>
-                  <Button
-                    className={`w-full font-bold ${
-                      isCurrent
-                        ? "bg-zinc-800 hover:bg-zinc-700 text-white cursor-pointer hover:bg-zinc-600"
-                        : "bg-primary text-black hover:bg-primary/90"
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      pilihPaket(plan.id);
-                    }}
+          <div className="border border-dashed border-zinc-600 rounded-xl bg-zinc-950/30 p-6 md:p-8">
+            {sedangMemuatFavorit ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : latihanFavorit.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {latihanFavorit.map((latihan) => (
+                  <Link
+                    key={latihan.idLatihan}
+                    href={`/latihan/${latihan.idLatihan}`}
+                    className="group relative flex flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 transition-all hover:border-primary/50"
                   >
-                    {isCurrent ? "Lihat Detail Invoice" : "Pilih Paket"}
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
+                    <div className="aspect-square overflow-hidden bg-white/5 p-4 relative">
+                      <img
+                        src={latihan.urlGambar}
+                        alt={latihan.nama}
+                        loading="lazy"
+                        className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-lg text-white truncate group-hover:text-primary transition-colors">
+                        {latihan.nama}
+                      </h3>
+                      <p className="text-xs text-muted-foreground capitalize mt-1">
+                        {latihan.bagianTubuh?.[0] || latihan.ototTarget?.[0] || "Umum"}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <DumbbellIcon className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white">Belum ada favorit</h3>
+                <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-2">
+                  Jelajahi latihan dan klik ikon hati untuk menyimpannya di sini.
+                </p>
+                <Button asChild className="mt-6" variant="outline">
+                  <Link href="/list-latihan">Cari Latihan</Link>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
+
+        <hr className="border-zinc-800 my-12" />
+
+        {paketAktif ? (
+          // UI TAMPILAN JIKA SUDAH PUNYA PAKET
+          <div className="flex flex-col">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+              <div className="text-center md:text-left">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2 justify-center md:justify-start">
+                  <CrownIcon className="w-6 h-6 text-primary fill-primary/20" />
+                  Paket Anda Saat Ini
+                </h2>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Detail status keanggotaan dan tagihan Anda.
+                </p>
+              </div>
+            </div>
+
+            {(() => {
+              const currentPlan = plans.find((p) => p.id === paketAktif);
+              if (!currentPlan) return null;
+
+              return (
+                <Card
+                  className={`w-full overflow-hidden border-2 ${currentPlan.border} bg-zinc-950/50 shadow-2xl flex flex-col md:flex-row`}
+                >
+                  {/* Left Side: Plan Details */}
+                  <div className="flex-1 relative overflow-hidden">
+                    <div className={`absolute inset-0 opacity-10 ${currentPlan.bg}`} />
+                    <div className="relative z-10 p-8 md:p-10 h-full flex flex-col justify-between mb-8">
+                      <div className="space-y-8">
+                        {/* Header Part */}
+                        <div className="flex justify-between items-start gap-6">
+                          <div className="flex items-center gap-6">
+                            <div
+                              className={`p-4 rounded-2xl bg-zinc-950 border border-zinc-800 shadow-xl ${currentPlan.color}`}
+                            >
+                              <currentPlan.icon className="w-12 h-12" />
+                            </div>
+                            <div>
+                              <h3
+                                className={`text-3xl font-black uppercase tracking-tight ${currentPlan.color}`}
+                              >
+                                {currentPlan.name}
+                              </h3>
+                              <p className="text-zinc-400 mt-1 text-lg">
+                                {currentPlan.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="text-right hidden md:block">
+                            <div className="text-sm text-zinc-500 uppercase font-bold tracking-widest mb-1">
+                              Status
+                            </div>
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-green-500/10 text-green-500 font-bold border border-green-500/20">
+                              <CheckCircle2Icon className="w-4 h-4" />
+                              <span>AKTIF</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Features Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 pt-8 border-t border-zinc-800/50">
+                          {currentPlan.features.map((feature, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <div
+                                className={`p-1.5 rounded-full ${
+                                  currentPlan.bg ? "bg-primary/10" : "bg-zinc-800"
+                                }`}
+                              >
+                                <CheckIcon
+                                  className={`w-4 h-4 ${currentPlan.color || "text-primary"}`}
+                                />
+                              </div>
+                              <span className="text-zinc-300 font-medium">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Mobile Status Only */}
+                      <div className="mt-8 md:hidden flex justify-between items-center border-t border-zinc-800 pt-4">
+                        <span className="text-sm text-zinc-500 uppercase font-bold tracking-widest">
+                          Status
+                        </span>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-green-500/10 text-green-500 font-bold border border-green-500/20">
+                          <CheckCircle2Icon className="w-4 h-4" />
+                          <span>AKTIF</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Side: Sidebar Actions */}
+                  <div className="w-full md:w-80 shrink-0 border-l-0 md:border-l border-t md:border-t-0 border-dashed border-zinc-700 bg-zinc-900/10 p-8 flex flex-col justify-center gap-8 relative">
+                    {/* Decorative pattern for sidebar */}
+                    <div className="absolute inset-0 bg-[radial-gradient(#3f3f46_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.03]"></div>
+
+                    <div className="relative z-10 space-y-6">
+                      <div>
+                        <p className="text-sm text-zinc-500 font-medium mb-1">
+                          Total Tagihan Bulanan
+                        </p>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-3xl font-black text-white">
+                            {currentPlan.price}
+                          </span>
+                          <span className="text-zinc-500 text-sm font-medium">/bulan</span>
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-zinc-800 w-full border-b border-dashed border-zinc-700/50" />
+
+                      <div className="flex flex-col gap-3">
+                        <Button
+                          className="w-full gap-2 h-12 font-bold text-black shadow-lg shadow-primary/10"
+                          onClick={() => {
+                            setSelectedPlanId(currentPlan.id);
+                            setShowInvoice(true);
+                          }}
+                        >
+                          <ReceiptIcon className="w-4 h-4" />
+                          Lihat Invoice
+                        </Button>
+
+                        <Button
+                          className="w-full gap-2 bg-red-500 hover:bg-red-600 text-white h-10"
+                          onClick={() => setShowCancelConfirm(true)}
+                        >
+                          <XIcon className="w-4 h-4" />
+                          Batalkan Langganan
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })()}
+          </div>
+        ) : (
+          // UI PILIHAN PAKET (JIKA BELUM PUNYA PAKET)
+          <>
+            <div className="flex flex-col items-center mb-10 text-center">
+              <h2 className="text-3xl font-bold tracking-tight mb-2">Pilihan Paket Membership</h2>
+              <p className="text-muted-foreground max-w-xl">
+                Upgrade membership Anda untuk mendapatkan akses lebih banyak fasilitas dan manfaat
+                eksklusif.
+              </p>
+            </div>
+
+            {/* Grid Paket */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {plans.map((plan) => {
+                // Jangan tampilkan jika paketAktif (Logic fallback redundant but safe)
+                const isCurrent = paketAktif === plan.id;
+                return (
+                  <Card
+                    key={plan.id}
+                    className={`relative flex flex-col overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ${
+                      plan.bg
+                    } ${plan.border} ${
+                      isCurrent
+                        ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/10 cursor-pointer"
+                        : "border border-zinc-800"
+                    }`}
+                    onClick={() => isCurrent && pilihPaket(plan.id)}
+                  >
+                    {isCurrent && <div className="absolute top-0 inset-x-0 bg-primary h-1" />}
+
+                    <CardHeader>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className={`p-3 rounded-xl bg-zinc-950/50 ${plan.color}`}>
+                          <plan.icon className="w-8 h-8" />
+                        </div>
+                        {isCurrent && (
+                          <span className="px-3 py-1 rounded-full bg-primary text-black text-xs font-bold uppercase tracking-wider">
+                            Aktif
+                          </span>
+                        )}
+                      </div>
+                      <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-2 min-h-[40px]">
+                        {plan.description}
+                      </p>
+                      <div className="mt-4">
+                        <span className="text-3xl font-black">{plan.price}</span>
+                        <span className="text-muted-foreground font-medium">/bulan</span>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="flex-1">
+                      <div className="space-y-4 pt-2">
+                        <div className="h-px bg-zinc-800 w-full" />
+                        {plan.features.map((feature, i) => (
+                          <div key={i} className="flex items-start gap-3 text-sm">
+                            <CheckIcon
+                              className={`w-5 h-5 shrink-0 ${
+                                isCurrent ? "text-primary" : "text-zinc-500"
+                              }`}
+                            />
+                            <span className="text-zinc-300">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+
+                    <CardFooter>
+                      <Button
+                        className={`w-full font-bold cursor-pointer ${
+                          isCurrent
+                            ? "bg-zinc-800 hover:bg-zinc-700 text-white hover:bg-zinc-600"
+                            : "bg-primary text-black hover:bg-primary/90"
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          pilihPaket(plan.id);
+                        }}
+                      >
+                        {isCurrent ? "Lihat Detail Invoice" : "Pilih Paket"}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Modal Invoice - Tampilan WEB (Tema Gelap) */}
+      {/* Modal Invoice - Tampilan WEB */}
       {showInvoice && selectedPlanId && (
         <>
           {/* Modal Layar */}
@@ -468,11 +746,7 @@ export default function ProfilPage() {
                     <ReceiptIcon className="w-5 h-5 text-primary" />
                     <CardTitle>Invoice Pembayaran</CardTitle>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowInvoice(false)}
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => setShowInvoice(false)}>
                     <XIcon className="w-5 h-5" />
                   </Button>
                 </div>
@@ -484,7 +758,7 @@ export default function ProfilPage() {
                     <div>
                       <p className="text-sm text-zinc-400">Order ID</p>
                       <p className="font-mono text-white tracking-widest">
-                        {formData.orderId || "PENDING"}
+                        {formData.idPesanan || "PENDING"}
                       </p>
                       <div className="mt-1">
                         <span className="inline-flex items-center gap-1 text-primary font-bold bg-primary/10 px-2 py-0.5 rounded text-xs border border-primary/20">
@@ -507,21 +781,15 @@ export default function ProfilPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-zinc-400">Nama</p>
-                      <p className="font-semibold text-white truncate">
-                        {formData.fullName}
-                      </p>
+                      <p className="font-semibold text-white truncate">{formData.namaLengkap}</p>
                     </div>
                     <div>
                       <p className="text-sm text-zinc-400">Email</p>
-                      <p className="font-semibold text-white truncate">
-                        {formData.email}
-                      </p>
+                      <p className="font-semibold text-white truncate">{formData.email}</p>
                     </div>
                     <div>
                       <p className="text-sm text-zinc-400">Nomor HP</p>
-                      <p className="font-semibold text-white">
-                        {formData.phone}
-                      </p>
+                      <p className="font-semibold text-white">{formData.nomorTelepon}</p>
                     </div>
                     <div>
                       <p className="text-sm text-zinc-400">Paket</p>
@@ -601,20 +869,14 @@ export default function ProfilPage() {
               {/* Barang/Item */}
               <div className="py-4 space-y-3">
                 <div className="flex justify-between items-end border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 text-xs uppercase">
-                    No. Order
-                  </span>
+                  <span className="text-gray-500 text-xs uppercase">No. Order</span>
                   <span className="font-bold tracking-widest">
-                    {formData.orderId || "GYM-REF"}
+                    {formData.idPesanan || "GYM-REF"}
                   </span>
                 </div>
                 <div className="flex justify-between items-end border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 text-xs uppercase">
-                    Member
-                  </span>
-                  <span className="font-bold uppercase">
-                    {formData.fullName}
-                  </span>
+                  <span className="text-gray-500 text-xs uppercase">Member</span>
+                  <span className="font-bold uppercase">{formData.namaLengkap}</span>
                 </div>
                 <div className="flex justify-between items-end border-b border-gray-100 pb-2">
                   <span className="text-gray-500 text-xs uppercase">Paket</span>
@@ -637,18 +899,14 @@ export default function ProfilPage() {
                 <div className="inline-block px-4 py-1 border-2 border-black rounded uppercase font-bold text-xs tracking-widest">
                   LUNAS
                 </div>
-                <p className="text-xs text-gray-400">
-                  Terima kasih telah bergabung dengan kami!
-                </p>
+                <p className="text-xs text-gray-400">Terima kasih telah bergabung dengan kami!</p>
               </div>
 
               {/* Garis Potong */}
               <div className="absolute bottom-0 left-0 w-full flex justify-between px-2 pb-2 opacity-30">
-                {"- - - - - - - - - - - - - - - - - - - - - - - - -"
-                  .split("")
-                  .map((c, i) => (
-                    <span key={i}>{c}</span>
-                  ))}
+                {"- - - - - - - - - - - - - - - - - - - - - - - - -".split("").map((c, i) => (
+                  <span key={i}>{c}</span>
+                ))}
               </div>
             </div>
           </div>
@@ -658,9 +916,7 @@ export default function ProfilPage() {
       {/* Modal Sukses Email */}
       <AlertDialog open={showEmailSuccess} onOpenChange={setShowEmailSuccess}>
         <AlertDialogContent className="bg-zinc-950 border border-zinc-900 shadow-2xl overflow-hidden max-w-sm p-0">
-          <AlertDialogTitle className="sr-only">
-            Email Terkirim
-          </AlertDialogTitle>
+          <AlertDialogTitle className="sr-only">Email Terkirim</AlertDialogTitle>
           <div className="flex flex-col items-center justify-center p-8 text-center bg-zinc-950/50">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-6 ring-4 ring-primary/10 animate-bounce cursor-default">
               <MailIcon className="w-8 h-8 text-primary" />
@@ -681,6 +937,53 @@ export default function ProfilPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Modal Konfirmasi Logout */}
+      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Keluar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin keluar dari akun Anda?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-2">
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={() => {
+                setShowLogoutConfirm(false);
+                logout();
+                toast.success("Berhasil keluar dari akun");
+              }}
+            >
+              Keluar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal Konfirmasi Batal Langganan */}
+      <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batalkan Langganan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin membatalkan langganan membership Anda? Anda akan kehilangan
+              akses ke fasilitas member.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-2">
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={batalkanLangganan}
+            >
+              Ya, Batalkan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Modal Formulir Registrasi/Edit Profil */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -691,9 +994,7 @@ export default function ProfilPage() {
           >
             <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-zinc-950 z-10 border-b border-zinc-800">
               <div>
-                <CardTitle>
-                  {isEditing ? "Edit Profil" : "Lengkapi Data Diri"}
-                </CardTitle>
+                <CardTitle>{isEditing ? "Edit Profil" : "Lengkapi Data Diri"}</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
                   {isEditing
                     ? "Perbarui informasi pribadi Anda."
@@ -711,25 +1012,20 @@ export default function ProfilPage() {
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={simpanData} className="space-y-6">
-                <div
-                  className={`grid grid-cols-1 ${
-                    !isEditing ? "md:grid-cols-2" : ""
-                  } gap-6`}
-                >
+                <div className={`grid grid-cols-1 ${!isEditing ? "md:grid-cols-2" : ""} gap-6`}>
                   <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-zinc-300">
+                    <Label htmlFor="namaLengkap" className="text-zinc-300">
                       Nama Lengkap
                     </Label>
                     <Input
-                      id="fullName"
+                      id="namaLengkap"
                       placeholder="Masukkan nama lengkap"
                       required
-                      value={formData.fullName}
+                      value={formData.namaLengkap}
                       onChange={ubahInput}
-                      className="bg-zinc-900 border-zinc-700 focus-visible:ring-primary"
+                      className=""
                     />
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-zinc-300">
                       Email
@@ -741,35 +1037,34 @@ export default function ProfilPage() {
                       required
                       value={formData.email}
                       onChange={ubahInput}
-                      className="bg-zinc-900 border-zinc-700 focus-visible:ring-primary"
                     />
                   </div>
 
                   {!isEditing && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-zinc-300">
+                        <Label htmlFor="nomorTelepon" className="text-zinc-300">
                           Nomor HP
                         </Label>
                         <Input
-                          id="phone"
+                          id="nomorTelepon"
                           type="tel"
                           placeholder="08xxxxxxxxxx"
                           required
-                          value={formData.phone}
+                          value={formData.nomorTelepon}
                           onChange={ubahInput}
-                          className="bg-zinc-900 border-zinc-700 focus-visible:ring-primary"
+                          className=""
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="gender" className="text-zinc-300">
+                        <Label htmlFor="jenisKelamin" className="text-zinc-300">
                           Jenis Kelamin
                         </Label>
                         <Select
-                          onValueChange={(val) => ubahPilihan("gender", val)}
+                          onValueChange={(val) => ubahPilihan("jenisKelamin", val)}
                           required
-                          defaultValue={formData.gender}
+                          defaultValue={formData.jenisKelamin}
                         >
                           <SelectTrigger className="bg-zinc-900 border-zinc-700 focus:ring-primary">
                             <SelectValue placeholder="Pilih jenis kelamin" />
@@ -782,27 +1077,27 @@ export default function ProfilPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="dob" className="text-zinc-300">
+                        <Label htmlFor="tanggalLahir" className="text-zinc-300">
                           Tanggal Lahir
                         </Label>
                         <Input
-                          id="dob"
+                          id="tanggalLahir"
                           type="date"
                           required
-                          value={formData.dob}
+                          value={formData.tanggalLahir}
                           onChange={ubahInput}
-                          className="bg-zinc-900 border-zinc-700 focus-visible:ring-primary [color-scheme:dark]"
+                          className=" scheme-dark"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="goal" className="text-zinc-300">
+                        <Label htmlFor="tujuanLatihan" className="text-zinc-300">
                           Tujuan Latihan
                         </Label>
                         <Select
-                          onValueChange={(val) => ubahPilihan("goal", val)}
+                          onValueChange={(val) => ubahPilihan("tujuanLatihan", val)}
                           required
-                          defaultValue={formData.goal}
+                          defaultValue={formData.tujuanLatihan}
                         >
                           <SelectTrigger className="bg-zinc-900 border-zinc-700 focus:ring-primary">
                             <SelectValue placeholder="Pilih tujuan latihan" />
@@ -811,15 +1106,11 @@ export default function ProfilPage() {
                             <SelectItem value="Menurunkan Berat Badan">
                               Menurunkan Berat Badan
                             </SelectItem>
-                            <SelectItem value="Membentuk Otot">
-                              Membentuk Otot
-                            </SelectItem>
+                            <SelectItem value="Membentuk Otot">Membentuk Otot</SelectItem>
                             <SelectItem value="Meningkatkan Stamina">
                               Meningkatkan Stamina
                             </SelectItem>
-                            <SelectItem value="Kesehatan Umum">
-                              Kesehatan Umum
-                            </SelectItem>
+                            <SelectItem value="Kesehatan Umum">Kesehatan Umum</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -829,16 +1120,16 @@ export default function ProfilPage() {
 
                 {!isEditing && (
                   <div className="space-y-2">
-                    <Label htmlFor="address" className="text-zinc-300">
+                    <Label htmlFor="alamat" className="text-zinc-300">
                       Alamat Domisili
                     </Label>
                     <Textarea
-                      id="address"
+                      id="alamat"
                       placeholder="Alamat lengkap domisili saat ini"
                       required
-                      value={formData.address}
+                      value={formData.alamat}
                       onChange={ubahInput}
-                      className="bg-zinc-900 border-zinc-700 focus-visible:ring-primary min-h-[80px]"
+                      className="min-h-[80px]"
                     />
                   </div>
                 )}
@@ -876,7 +1167,7 @@ export default function ProfilPage() {
       )}
 
       {/* Modal Notifikasi Sukses */}
-      {showSuccess && (activePlan || isEditing) && (
+      {showSuccess && (paketAktif || isEditing) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
           <Card className="w-full max-w-md bg-zinc-950 border-primary/20 shadow-[0_0_50px_rgba(163,230,53,0.1)] animate-in zoom-in-95 slide-in-from-bottom-5 duration-300">
             <CardContent className="flex flex-col items-center justify-center p-8 text-center space-y-6">
@@ -895,7 +1186,7 @@ export default function ProfilPage() {
                     <>
                       Paket{" "}
                       <span className="text-primary font-bold">
-                        {plans.find((p) => p.id === activePlan)?.name}
+                        {plans.find((p) => p.id === paketAktif)?.name}
                       </span>{" "}
                       berhasil diaktifkan.
                     </>
@@ -910,10 +1201,8 @@ export default function ProfilPage() {
                   ) : (
                     <>
                       Terima kasih{" "}
-                      <span className="text-white font-semibold">
-                        {formData.fullName}
-                      </span>
-                      , perjalanan kebugaran Anda dimulai sekarang!
+                      <span className="text-white font-semibold">{formData.namaLengkap}</span>,
+                      perjalanan kebugaran Anda dimulai sekarang!
                     </>
                   )}
                 </p>
