@@ -51,7 +51,7 @@ import { toast } from "sonner";
 const API_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
 
 export default function ProfilPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, login } = useAuth();
   const router = useRouter();
 
   const [paketAktif, setPaketAktif] = useState<string | null>(null);
@@ -73,7 +73,7 @@ export default function ProfilPage() {
 
   // State Formulir
   const [formData, setFormData] = useState({
-    namaLengkap: "",
+    name: "",
     email: "",
     nomorTelepon: "",
     jenisKelamin: "",
@@ -119,7 +119,7 @@ export default function ProfilPage() {
 
             // Isi awal data formulir
             setFormData({
-              namaLengkap: data.namaLengkap || data.name || user.name || "",
+              name: data.name || user.name || "",
               email: data.email || "",
               nomorTelepon: data.nomorTelepon || data.phone || "",
               jenisKelamin: data.jenisKelamin || data.gender || "",
@@ -257,7 +257,7 @@ export default function ProfilPage() {
       const userRef = doc(db, "users", user.username);
 
       const updatePayload: any = {
-        namaLengkap: formData.namaLengkap,
+        name: formData.name,
         email: formData.email,
         nomorTelepon: formData.nomorTelepon,
         jenisKelamin: formData.jenisKelamin,
@@ -292,6 +292,13 @@ export default function ProfilPage() {
       // Update Firestore
       await updateDoc(userRef, updatePayload);
 
+      // Update Session Context agar UI berubah langsung
+      login({
+        username: user.username,
+        name: formData.name,
+        fotoProfil: formData.fotoProfil || user.fotoProfil,
+      });
+
       if (!isEditing && selectedPlanId) {
         setPaketAktif(selectedPlanId);
       }
@@ -317,10 +324,7 @@ export default function ProfilPage() {
 
   const cetakStruk = () => {
     const originalTitle = document.title;
-    document.title = `Invoice_${formData.idPesanan || "GYM"}_${formData.namaLengkap.replace(
-      /\s+/g,
-      "_"
-    )}`;
+    document.title = `Invoice_${formData.idPesanan || "GYM"}_${formData.name.replace(/\s+/g, "_")}`;
     window.print();
     document.title = originalTitle;
   };
@@ -346,7 +350,7 @@ export default function ProfilPage() {
         },
         body: JSON.stringify({
           email: formData.email,
-          name: formData.namaLengkap,
+          name: formData.name,
           packageName: activePlanDetails.name,
           price: activePlanDetails.price,
           date: formData.paketAktifTanggal
@@ -811,7 +815,7 @@ export default function ProfilPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-zinc-400">Nama</p>
-                      <p className="font-semibold text-white truncate">{formData.namaLengkap}</p>
+                      <p className="font-semibold text-white truncate">{formData.name}</p>
                     </div>
                     <div>
                       <p className="text-sm text-zinc-400">Email</p>
@@ -907,7 +911,7 @@ export default function ProfilPage() {
                 </div>
                 <div className="flex justify-between items-end border-b border-gray-100 pb-2">
                   <span className="text-gray-500 text-xs uppercase">Member</span>
-                  <span className="font-bold uppercase">{formData.namaLengkap}</span>
+                  <span className="font-bold uppercase">{formData.name}</span>
                 </div>
                 <div className="flex justify-between items-end border-b border-gray-100 pb-2">
                   <span className="text-gray-500 text-xs uppercase">Paket</span>
@@ -1043,16 +1047,16 @@ export default function ProfilPage() {
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={simpanData} className="space-y-6">
-                <div className={`grid grid-cols-1 ${!isEditing ? "md:grid-cols-2" : ""} gap-6`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="namaLengkap" className="text-zinc-300">
+                    <Label htmlFor="name" className="text-zinc-300">
                       Nama Lengkap
                     </Label>
                     <Input
-                      id="namaLengkap"
+                      id="name"
                       placeholder="Masukkan nama lengkap"
                       required
-                      value={formData.namaLengkap}
+                      value={formData.name}
                       onChange={ubahInput}
                       className=""
                     />
@@ -1071,99 +1075,91 @@ export default function ProfilPage() {
                     />
                   </div>
 
-                  {!isEditing && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="nomorTelepon" className="text-zinc-300">
-                          Nomor HP
-                        </Label>
-                        <Input
-                          id="nomorTelepon"
-                          type="tel"
-                          placeholder="08xxxxxxxxxx"
-                          required
-                          value={formData.nomorTelepon}
-                          onChange={ubahInput}
-                          className=""
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="jenisKelamin" className="text-zinc-300">
-                          Jenis Kelamin
-                        </Label>
-                        <Select
-                          onValueChange={(val) => ubahPilihan("jenisKelamin", val)}
-                          required
-                          defaultValue={formData.jenisKelamin}
-                        >
-                          <SelectTrigger className="bg-zinc-900 border-zinc-700 focus:ring-primary">
-                            <SelectValue placeholder="Pilih jenis kelamin" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Laki-laki">Laki-laki</SelectItem>
-                            <SelectItem value="Perempuan">Perempuan</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="tanggalLahir" className="text-zinc-300">
-                          Tanggal Lahir
-                        </Label>
-                        <Input
-                          id="tanggalLahir"
-                          type="date"
-                          required
-                          value={formData.tanggalLahir}
-                          onChange={ubahInput}
-                          className=" scheme-dark"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="tujuanLatihan" className="text-zinc-300">
-                          Tujuan Latihan
-                        </Label>
-                        <Select
-                          onValueChange={(val) => ubahPilihan("tujuanLatihan", val)}
-                          required
-                          defaultValue={formData.tujuanLatihan}
-                        >
-                          <SelectTrigger className="bg-zinc-900 border-zinc-700 focus:ring-primary">
-                            <SelectValue placeholder="Pilih tujuan latihan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Menurunkan Berat Badan">
-                              Menurunkan Berat Badan
-                            </SelectItem>
-                            <SelectItem value="Membentuk Otot">Membentuk Otot</SelectItem>
-                            <SelectItem value="Meningkatkan Stamina">
-                              Meningkatkan Stamina
-                            </SelectItem>
-                            <SelectItem value="Kesehatan Umum">Kesehatan Umum</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {!isEditing && (
                   <div className="space-y-2">
-                    <Label htmlFor="alamat" className="text-zinc-300">
-                      Alamat Domisili
+                    <Label htmlFor="nomorTelepon" className="text-zinc-300">
+                      Nomor HP
                     </Label>
-                    <Textarea
-                      id="alamat"
-                      placeholder="Alamat lengkap domisili saat ini"
+                    <Input
+                      id="nomorTelepon"
+                      type="tel"
+                      placeholder="08xxxxxxxxxx"
                       required
-                      value={formData.alamat}
+                      value={formData.nomorTelepon}
                       onChange={ubahInput}
-                      className="min-h-[80px]"
+                      className=""
                     />
                   </div>
-                )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="jenisKelamin" className="text-zinc-300">
+                      Jenis Kelamin
+                    </Label>
+                    <Select
+                      onValueChange={(val) => ubahPilihan("jenisKelamin", val)}
+                      required
+                      defaultValue={formData.jenisKelamin}
+                    >
+                      <SelectTrigger className="bg-zinc-900 border-zinc-700 focus:ring-primary">
+                        <SelectValue placeholder="Pilih jenis kelamin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                        <SelectItem value="Perempuan">Perempuan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tanggalLahir" className="text-zinc-300">
+                      Tanggal Lahir
+                    </Label>
+                    <Input
+                      id="tanggalLahir"
+                      type="date"
+                      required
+                      value={formData.tanggalLahir}
+                      onChange={ubahInput}
+                      className=" scheme-dark"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tujuanLatihan" className="text-zinc-300">
+                      Tujuan Latihan
+                    </Label>
+                    <Select
+                      onValueChange={(val) => ubahPilihan("tujuanLatihan", val)}
+                      required
+                      defaultValue={formData.tujuanLatihan}
+                    >
+                      <SelectTrigger className="bg-zinc-900 border-zinc-700 focus:ring-primary">
+                        <SelectValue placeholder="Pilih tujuan latihan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Menurunkan Berat Badan">
+                          Menurunkan Berat Badan
+                        </SelectItem>
+                        <SelectItem value="Membentuk Otot">Membentuk Otot</SelectItem>
+                        <SelectItem value="Meningkatkan Stamina">Meningkatkan Stamina</SelectItem>
+                        <SelectItem value="Kesehatan Umum">Kesehatan Umum</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="alamat" className="text-zinc-300">
+                    Alamat Domisili
+                  </Label>
+                  <Textarea
+                    id="alamat"
+                    placeholder="Alamat lengkap domisili saat ini"
+                    required
+                    value={formData.alamat}
+                    onChange={ubahInput}
+                    className="min-h-[80px]"
+                  />
+                </div>
 
                 <div className="pt-4 flex justify-end gap-3">
                   <Button
@@ -1231,9 +1227,8 @@ export default function ProfilPage() {
                     "Data profil terbaru Anda telah tersimpan."
                   ) : (
                     <>
-                      Terima kasih{" "}
-                      <span className="text-white font-semibold">{formData.namaLengkap}</span>,
-                      perjalanan kebugaran Anda dimulai sekarang!
+                      Terima kasih <span className="text-white font-semibold">{formData.name}</span>
+                      , perjalanan kebugaran Anda dimulai sekarang!
                     </>
                   )}
                 </p>
