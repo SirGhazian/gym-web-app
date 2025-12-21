@@ -1,4 +1,9 @@
 const express = require("express");
+const dns = require("dns");
+// Force IPv4 to avoid IPv6 timeouts in some cloud environments
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
@@ -32,7 +37,6 @@ const io = new Server(server, {
   },
 });
 
-// Pengirim Email (Konfigurasi di file .env Anda)
 // Pengirim Email (Konfigurasi di file .env Anda)
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
