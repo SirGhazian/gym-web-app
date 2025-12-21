@@ -272,7 +272,7 @@ export default function RoomChatPage() {
             <AlertDialogTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full h-10 gap-2 justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="w-full h-9 gap-2 justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <LogOut className="h-4 w-4" />
                 Keluar Room
@@ -398,7 +398,7 @@ export default function RoomChatPage() {
         <div className="p-4 border-t border-border bg-background/95 backdrop-blur p-safe-bottom shrink-0">
           <form onSubmit={kirimPesan} className="flex gap-2">
             <Input
-              placeholder="Type a message..."
+              placeholder="Ketik sebuah pesan..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               className="flex-1"
