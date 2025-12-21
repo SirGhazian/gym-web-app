@@ -2,39 +2,15 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
-const path = require("path");
-
-console.log("Starting Chat Server...");
-
-// Safely load dotenv if not in production
-if (process.env.NODE_ENV !== "production") {
-  try {
-    const envPath = path.resolve(__dirname, "../.env");
-    const dotenvResult = require("dotenv").config({ path: envPath });
-    if (dotenvResult.error) {
-      console.log("Info: .env not loaded (normal for production)");
-    } else {
-      console.log("Loaded .env from:", envPath);
-    }
-  } catch (e) {
-    console.log("Dotenv skipped.");
-  }
-}
 
 const app = express();
 app.use(cors());
-app.use(express.json());
 
 const server = http.createServer(app);
 
-// Simple health check endpoint
-app.get("/", (req, res) => {
-  res.send("Gym Chat Server is Running!");
-});
-
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "*", // izinkan semua origin untuk kemudahan, batasi di produksi
     methods: ["GET", "POST"],
   },
 });
@@ -63,6 +39,7 @@ io.on("connection", (socket) => {
     }
 
     // kirim daftar room aktif yang diperbarui ke semua orang
+    // broadcast 'active_rooms' ke semua yang terhubung
     io.emit(
       "active_rooms",
       Array.from(activeRooms).map((r) => ({ roomNumber: r, id: r }))
@@ -75,15 +52,14 @@ io.on("connection", (socket) => {
 
   // user mengirim pesan
   socket.on("send_message", (data) => {
-    // data: { room, author, message, time, username, authorPhoto }
-    const { room, author, message, time, username, authorPhoto } = data;
+    // data: { room, author, message, time }
+    const { room, author, message, time, username } = data;
 
     const messageData = {
-      id: Date.now().toString(),
+      id: Date.now().toString(), // id sederhana
       text: message,
-      userId: username,
+      userId: username, // menggunakan username sebagai userId
       authorName: author,
-      authorPhoto: authorPhoto,
       createdAt: time,
     };
 
@@ -111,9 +87,8 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = 3001;
 
-// Bind to 0.0.0.0 for Railway support
-server.listen(PORT, "0.0.0.0", () => {
+server.listen(PORT, () => {
   console.log(`SERVER RUNNING ON PORT ${PORT}`);
 });
