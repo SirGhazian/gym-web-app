@@ -1,9 +1,4 @@
 const express = require("express");
-const dns = require("dns");
-// Force IPv4 to avoid IPv6 timeouts in some cloud environments
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder("ipv4first");
-}
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
@@ -39,22 +34,11 @@ const io = new Server(server, {
 
 // Pengirim Email (Konfigurasi di file .env Anda)
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // true for 465, false for other ports
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-});
-
-// Verifikasi koneksi email saat startup
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error("Transporter Error (Gagal Terhubung ke Email):", error);
-  } else {
-    console.log("Server is ready to take our messages (Email Terhubung!)");
-  }
 });
 
 // Endpoint untuk mengirim email invoice
