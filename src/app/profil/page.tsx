@@ -80,6 +80,7 @@ export default function ProfilPage() {
     tujuanLatihan: "",
     idPesanan: "",
     fotoProfil: "",
+    paketAktifTanggal: "",
   });
 
   // Lindungi halaman dan Ambil Data
@@ -125,6 +126,7 @@ export default function ProfilPage() {
               tujuanLatihan: data.tujuanLatihan || data.goal || "",
               idPesanan: data.idPesanan || "", // Ambil idPesanan
               fotoProfil: data.fotoProfil || "",
+              paketAktifTanggal: data.paketAktifTanggal || "",
             });
 
             // Ambil data favorit jika ada
@@ -267,10 +269,22 @@ export default function ProfilPage() {
         updatePayload.paketAktif = selectedPlanId;
         // Generate Order ID BARU hanya saat ganti/aktivasi paket
         const newOrderId = `GYM-${Math.floor(10000 + Math.random() * 90000)}`;
+        // Generate Tanggal Aktif BARU (yyyy-mm-dd) - Gunakan Waktu Lokal Client
+        const d = new Date();
+        const newDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+          d.getDate()
+        ).padStart(2, "0")}`;
+
+        updatePayload.paketAktif = selectedPlanId;
         updatePayload.idPesanan = newOrderId;
+        updatePayload.paketAktifTanggal = newDate;
 
         // Update state lokal segera
-        setFormData((prev) => ({ ...prev, idPesanan: newOrderId }));
+        setFormData((prev) => ({
+          ...prev,
+          idPesanan: newOrderId,
+          paketAktifTanggal: newDate,
+        }));
       }
 
       // Update Firestore
@@ -332,8 +346,14 @@ export default function ProfilPage() {
           name: formData.namaLengkap,
           packageName: activePlanDetails.name,
           price: activePlanDetails.price,
-          date: new Date().toLocaleDateString("id-ID"),
-          idPesanan: currentOrderId,
+          date: formData.paketAktifTanggal
+            ? new Date(formData.paketAktifTanggal).toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })
+            : new Date().toLocaleDateString("id-ID"),
+          orderId: currentOrderId,
         }),
       });
 
@@ -367,6 +387,7 @@ export default function ProfilPage() {
       await updateDoc(userRef, {
         paketAktif: null,
         idPesanan: null,
+        paketAktifTanggal: null,
       });
       setPaketAktif(null);
       setFormData((prev) => ({ ...prev, idPesanan: "" })); // Reset state lokal
@@ -769,11 +790,17 @@ export default function ProfilPage() {
                     <div className="text-right">
                       <p className="text-sm text-zinc-400">Tanggal</p>
                       <p className="font-medium text-white">
-                        {new Date().toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
+                        {formData.paketAktifTanggal
+                          ? new Date(formData.paketAktifTanggal).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })
+                          : new Date().toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })}
                       </p>
                     </div>
                   </div>
@@ -832,7 +859,7 @@ export default function ProfilPage() {
             </Card>
           </div>
 
-          {/* TAMPILAN CETAK SAJA (Gaya Struk) */}
+          {/* TAMPILAN CETAK SAJA */}
           <div className="hidden printable-area">
             <div className="w-[380px] border border-gray-200 bg-white text-black p-8 font-mono text-sm shadow-sm relative overflow-hidden">
               {/* Hiasan Atas */}
@@ -840,13 +867,8 @@ export default function ProfilPage() {
 
               {/* Header */}
               <div className="text-center space-y-2 pb-6 border-b-2 border-dashed border-gray-300">
-                <div className="flex justify-center mb-2">
-                  <div className="p-2 bg-black text-white rounded-lg">
-                    <DumbbellIcon className="w-6 h-6" />
-                  </div>
-                </div>
                 <h2 className="text-xl font-black uppercase tracking-widest text-black">
-                  UNP GYM RECEIPT
+                  INVOICE UNPGYM
                 </h2>
                 <p className="text-xs text-gray-500">
                   Jalan Prof. Dr. Hamka, Air Tawar
@@ -857,12 +879,18 @@ export default function ProfilPage() {
 
               {/* Meta */}
               <div className="flex justify-between text-xs text-gray-500 py-3">
-                <span>{new Date().toLocaleDateString("id-ID")}</span>
                 <span>
-                  {new Date().toLocaleTimeString("id-ID", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formData.paketAktifTanggal
+                    ? new Date(formData.paketAktifTanggal).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : new Date().toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
                 </span>
               </div>
 
